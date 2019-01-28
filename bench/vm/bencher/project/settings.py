@@ -39,6 +39,6 @@ vm_descriptors = {
 
 #    "wagon"  : VMDescriptor(join("cmd", "wasm-run"), "wasm_run {wasm_file_path}", False),
 
-    "asmble" : VMDescriptor("JAVA_OPTS=\"-Xms2G -Xmx2G\"", join("asmble", "bin", "asmble"),
+    "asmble" : VMDescriptor("", join("asmble", "bin", "asmble"),
                             "invoke -in {wasm_file_path} {function_name} -defmaxmempages 32768", True)
 }

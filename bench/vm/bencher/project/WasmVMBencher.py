@@ -75,8 +75,7 @@ class WasmVMBencher:
                     continue
 
                 vm_binary_full_path = join(self.vm_dir, vm, vm_descriptors[vm].vm_relative_binary_path)
-                cmd = "{} {} {}".format(
-                    vm_descriptors[vm].vm_env_parameters,
+                cmd = "{} {}".format(
                     vm_binary_full_path,
                     vm_descriptors[vm].vm_launch_cmd.format(
                         wasm_file_path=test_descriptor.generated_test_full_path,
