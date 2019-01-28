@@ -18,7 +18,7 @@ from project.TestDescriptor import TestDescriptor
 from os.path import join
 
 # launch count of interpreter-based VMs
-interpreter_launches_count = 3
+interpreter_launches_count = 2
 
 # launch count of compiler-based VMs
 compiler_launches_count = 11
@@ -30,14 +30,14 @@ vm_descriptors = {
     "wavm"   : VMDescriptor(join("build_", "bin", "wavm-run"),
                             "{wasm_file_path} -f {function_name}", True),
 
-    "life"   : VMDescriptor(join("life"), "-entry {function_name} {wasm_file_path}", False),
-
-    "wasmi"  : VMDescriptor(join("target", "release", "examples", "invoke"),
-                            "{wasm_file_path} {function_name}", False),
+#    "life"   : VMDescriptor(join("life"), "-entry {function_name} {wasm_file_path}", False),
+#
+#    "wasmi"  : VMDescriptor(join("target", "release", "examples", "invoke"),
+#                            "{wasm_file_path} {function_name}", False),
 
     "wasmer" : VMDescriptor(join("target", "release", "wasmer"), "run {wasm_file_path}", True),
 
-    "wagon"  : VMDescriptor(join("cmd", "wasm-run"), "wasm_run {wasm_file_path}", False),
+#    "wagon"  : VMDescriptor(join("cmd", "wasm-run"), "wasm_run {wasm_file_path}", False),
 
     "asmble" : VMDescriptor(join("asmble", "bin", "asmble"),
                             "invoke -in {wasm_file_path} {function_name} -defmaxmempages 20000", True)

@@ -6,7 +6,6 @@ authors = ["Fluence Labs"]
 publish = false
 
 [lib]
-name = "matrix_svd_decomposition_wasm"
 crate-type = ["cdylib"]
 path = "src/lib.rs"
 

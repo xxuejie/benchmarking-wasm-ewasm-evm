@@ -6,7 +6,6 @@ authors = ["Fluence Labs"]
 publish = false
 
 [lib]
-name = "compression_wasm"
 crate-type = ["cdylib"]
 path = "src/lib.rs"
 

@@ -6,7 +6,6 @@ authors = ["Fluence Labs"]
 publish = false
 
 [lib]
-name = "fibonacci_bigint_wasm"
 crate-type = ["cdylib"]
 path = "src/lib.rs"
 
