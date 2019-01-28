@@ -27,7 +27,7 @@ compiler_launches_count = 11
 test_export_function_name = "main"
 
 vm_descriptors = {
-    "wavm"   : VMDescriptor("", join("build_", "bin", "wavm-run"),
+    "wavm"   : VMDescriptor(join("build_", "bin", "wavm-run"),
                             "{wasm_file_path} -f {function_name}", True),
 
 #    "life"   : VMDescriptor("", join("life"), "-entry {function_name} {wasm_file_path}", False),
@@ -35,10 +35,10 @@ vm_descriptors = {
 #    "wasmi"  : VMDescriptor("", join("target", "release", "examples", "invoke"),
 #                            "{wasm_file_path} {function_name}", False),
 
-    "wasmer" : VMDescriptor("", join("target", "release", "wasmer"), "run {wasm_file_path}", True),
+    "wasmer" : VMDescriptor(join("target", "release", "wasmer"), "run {wasm_file_path}", True),
 
 #    "wagon"  : VMDescriptor(join("cmd", "wasm-run"), "wasm_run {wasm_file_path}", False),
 
-    "asmble" : VMDescriptor("", join("asmble", "bin", "asmble"),
-                            "invoke -in {wasm_file_path} {function_name} -defmaxmempages 32768", True)
+    "asmble" : VMDescriptor(join("asmble", "bin", "asmble"),
+                            "invoke -in {wasm_file_path} {function_name} -defmaxmempages 32760", True)
 }
