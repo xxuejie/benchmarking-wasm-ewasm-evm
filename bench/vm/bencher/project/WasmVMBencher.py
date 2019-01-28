@@ -75,12 +75,18 @@ class WasmVMBencher:
                     continue
 
                 vm_binary_full_path = join(self.vm_dir, vm, vm_descriptors[vm].vm_relative_binary_path)
-                cmd = vm_binary_full_path + " " \
-                      + vm_descriptors[vm].vm_launch_cmd.format(wasm_file_path=test_descriptor.generated_test_full_path,
-                                                                function_name=test_export_function_name)
+                cmd = "{} {} {}".format(
+                    vm_descriptors[vm].vm_env_parameters,
+                    vm_binary_full_path,
+                    vm_descriptors[vm].vm_launch_cmd.format(
+                        wasm_file_path=test_descriptor.generated_test_full_path,
+                        function_name=test_export_function_name
+                    )
+                )
 
                 launch_count = compiler_launches_count if vm_descriptors[vm].is_compiler_type \
                     else interpreter_launches_count
+
                 for _ in range(launch_count):
                     logger.info("<wasm_bencher>: {}".format(cmd))
                     result_record = self.__do_one_test(cmd)
