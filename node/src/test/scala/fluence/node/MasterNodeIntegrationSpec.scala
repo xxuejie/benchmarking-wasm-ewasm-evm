@@ -151,7 +151,24 @@ class MasterNodeIntegrationSpec
             worker2 shouldBe defined
           },
           maxWait = 90.seconds
-        )
+        ).guaranteeCase {
+          case outcome =>
+            IO {
+              import scala.sys.process._
+              println(s"Outcome: $outcome")
+              def logs(container: String) = {
+                println("=" * 25 + s"\n$container logs:\n\n\n")
+                s"docker logs $container".!
+              }
+
+              logs("master1")
+              logs("master2")
+              logs("01_worker0")
+              logs("01_worker1")
+              logs("02_worker0")
+              logs("02_worker1")
+            }
+        }
       } yield ()
     }
 
