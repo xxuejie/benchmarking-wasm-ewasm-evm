@@ -205,7 +205,7 @@ class MasterNodeIntegrationSpec
             case outcome =>
               IO {
                 import scala.sys.process._
-                println(s"Outcome: $outcome")
+                println("\n\n\n" + "=" * 25 + s"Outcome: $outcome")
                 def logs(container: String) = {
                   println("=" * 25 + s"\n$container logs:\n\n\n")
                   s"docker logs $container".!
@@ -229,8 +229,35 @@ class MasterNodeIntegrationSpec
       }.unsafeRunSync()
     }
 
-    "stop workers on AppDelete event" in {
+    "stop workers on AppDelete event :20000" in {
+      deleteApp(20000).unsafeRunSync()
+    }
+    "stop workers on AppDelete event :21000" in {
+      deleteApp(21000).unsafeRunSync()
+    }
+    "stop workers on AppDelete event :22000" in {
+      deleteApp(22000).unsafeRunSync()
+    }
+    "stop workers on AppDelete event :23000" in {
+      deleteApp(23000).unsafeRunSync()
+    }
+    "stop workers on AppDelete event :24000" in {
+      deleteApp(24000).unsafeRunSync()
+    }
+    "stop workers on AppDelete event :25000" in {
+      deleteApp(25000).unsafeRunSync()
+    }
+    "stop workers on AppDelete event :26000" in {
       deleteApp(26000).unsafeRunSync()
+    }
+    "stop workers on AppDelete event :27000" in {
+      deleteApp(27000).unsafeRunSync()
+    }
+    "stop workers on AppDelete event :28000" in {
+      deleteApp(28000).unsafeRunSync()
+    }
+    "stop workers on AppDelete event :29000" in {
+      deleteApp(29000).unsafeRunSync()
     }
   }
 }
