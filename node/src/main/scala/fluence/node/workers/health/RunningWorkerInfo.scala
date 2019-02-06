@@ -15,10 +15,10 @@
  */
 
 package fluence.node.workers.health
+import fluence.node.workers.tendermint.status.StatusResponse.{ValidatorInfo, WorkerTendermintInfo}
 import fluence.node.workers.{DockerWorker, WorkerParams}
-import fluence.node.workers.tendermint.status.StatusResponse.WorkerTendermintInfo
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder}
 
 /**
  * Collected information about running worker.
@@ -32,7 +32,8 @@ case class RunningWorkerInfo(
   tendermintNodeId: String,
   lastBlock: String,
   lastAppHash: String,
-  lastBlockHeight: Int
+  lastBlockHeight: Int,
+  validatorInfo: ValidatorInfo
 )
 
 object RunningWorkerInfo {
@@ -47,7 +48,8 @@ object RunningWorkerInfo {
       tendermintInfo.node_info.id,
       tendermintInfo.sync_info.latest_block_hash,
       tendermintInfo.sync_info.latest_app_hash,
-      tendermintInfo.sync_info.latest_block_height
+      tendermintInfo.sync_info.latest_block_height,
+      tendermintInfo.validator_info
     )
 
   implicit val encodeRunningWorkerInfo: Encoder[RunningWorkerInfo] = deriveEncoder

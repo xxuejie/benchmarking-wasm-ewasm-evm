@@ -20,8 +20,9 @@ import cats.effect.Async
 import cats.syntax.functor._
 import fluence.ethclient.helpers.Web3jConverters.stringToBytes32
 import fluence.node.config.NodeConfig
-import org.web3j.abi.datatypes.{Bool, DynamicArray}
 import org.web3j.abi.datatypes.generated._
+import org.web3j.abi.datatypes.{Bool, DynamicArray}
+import scodec.bits.ByteVector
 
 import scala.language.higherKinds
 
@@ -102,5 +103,8 @@ object FluenceContractTestOps {
      */
     def deleteApp[F[_]: Async](appId: Long): F[Unit] =
       contract.deleteApp(new Uint256(appId)).call[F].void
+
+    def deleteNode[F[_]: Async](validatorKey: ByteVector): F[Unit] =
+      contract.deleteNode(new Bytes32(validatorKey.toArray)).call[F].void
   }
 }

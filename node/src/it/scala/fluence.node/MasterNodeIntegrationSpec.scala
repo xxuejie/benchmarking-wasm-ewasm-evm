@@ -20,14 +20,15 @@ import com.softwaremill.sttp.asynchttpclient.cats.AsyncHttpClientCatsBackend
 import com.softwaremill.sttp.circe.asJson
 import com.softwaremill.sttp.{SttpBackend, _}
 import fluence.ethclient.EthClient
+import fluence.node.config.FluenceContractConfig
 import fluence.node.eth.FluenceContract
+import fluence.node.eth.FluenceContractTestOps._
 import fluence.node.status.MasterStatus
 import fluence.node.workers.health.WorkerRunning
-import org.scalatest.{Timer ⇒ _, _}
+import org.scalatest.{Timer => _, _}
+import scodec.bits.ByteVector
 import slogging.MessageFormatter.DefaultPrefixFormatter
 import slogging.{LazyLogging, LogLevel, LoggerConfig, PrintLoggerFactory}
-import eth.FluenceContractTestOps._
-import fluence.node.config.FluenceContractConfig
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -54,7 +55,7 @@ class MasterNodeIntegrationSpec
   }
 
   override protected def afterAll(): Unit = {
-    "docker network rm fluence_1_0 fluence_1_1 fluence_2_0 fluence_2_1".! // TODO: remove it after DockerIO.run's resource if fixed
+    "docker network rm fluence_1_0 fluence_1_1 fluence_2_0 fluence_2_1 &>/dev/null".! // TODO: remove it after DockerIO.run's resource if fixed
     killGanache()
   }
 
@@ -208,6 +209,29 @@ class MasterNodeIntegrationSpec
           } yield ()
       }
 
+    def deleteNode(basePort: Short): IO[Unit] = {
+      withEthSttpAndTwoMasters(basePort).use {
+        case (ethClient, s) =>
+          logger.debug("Prepared two masters for Delete Node test")
+
+          implicit val sttp = s
+          val getStatus1 = getRunningWorker(getStatusPort(basePort))
+          val getStatus2 = getRunningWorker(getStatusPort((basePort + 1).toShort))
+          val contract = FluenceContract(ethClient, contractConfig)
+
+          for {
+            _ <- runTwoWorkers(basePort)(ethClient, s)
+            status1 <- getStatus1
+            key = ByteVector.fromBase64(status1.value.info.validatorInfo.pub_key.value).value
+            _ <- contract.deleteNode[IO](key)
+            _ <- eventually[IO](
+              getStatus1.map(_.value.info.validatorInfo.voting_power shouldBe "0"),
+              maxWait = 90.seconds
+            )
+          } yield ()
+      }
+    }
+
     "sync their workers with contract clusters" in {
       val basePort: Short = 25000
 
@@ -224,6 +248,10 @@ class MasterNodeIntegrationSpec
 
     "stop workers on AppDelete event" in {
       deleteApp(26000).unsafeRunSync()
+    }
+
+    "kick node from Tendermint cluster on NodeDeleted event" in {
+      deleteNode(27000).unsafeRunSync()
     }
   }
 }
