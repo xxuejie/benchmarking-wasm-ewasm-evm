@@ -119,10 +119,10 @@ RUN pip3 install click durationpy
 
 
 COPY ./wasmfiles /wasmfiles
-COPY ./engine-bench /engine-bench
+COPY ./bencher /bencher
 RUN mkdir -p /testresults
 
-WORKDIR /engine-bench
+WORKDIR /bencher
 
 CMD /bin/bash
 
