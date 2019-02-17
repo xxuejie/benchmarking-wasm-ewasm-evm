@@ -26,19 +26,52 @@ compiler_launches_count = 11
 # export function name that should be called from each Wasm module
 test_export_function_name = "main"
 
+"""
+    Attributes
+    ----------
+    vm_relative_binary_path : str
+        A relative path to VM binary in its main folder.
+    vm_launch_cmd : str
+        An format string with command for launch this vm with provided test.
+    is_compiler_type : bool
+        True, if vm is compiler-type (JIT, AOT, ...).
+
+    VMDescriptor(vm_relative_binary_path="", vm_launch_cmd="", is_compiler_type=True)
+"""
+
+# /engines/wavm-build/bin# ./wavm-run -
+# /engines/life# ./life
+# /engines/wasmi/target/debug/examples# ./invoke
+# /engines/wagon/cmd/wasm-run# ./wasm-run
+# /root/.wasmer/bin/wasmer
+
 vm_descriptors = {
-    "wavm"   : VMDescriptor(join("build_", "bin", "wavm-run"),
-                            "{wasm_file_path} -f {function_name}", True),
+    "v8-liftoff" : VMDescriptor("/engines/node/node", "--liftoff --no-wasm-tier-up /engines/node/node-timer.js {wasm_file_path}", True),
 
-    "life"   : VMDescriptor(join("life"), "-entry {function_name} {wasm_file_path}", False),
+    "v8-turbofan" : VMDescriptor("/engines/node/node", "--no-liftoff /engines/node/node-timer.js {wasm_file_path}", True),
 
-    "wasmi"  : VMDescriptor(join("target", "release", "examples", "invoke"),
-                            "{wasm_file_path} {function_name}", False),
+    "v8-interpreter" : VMDescriptor("/engines/node/node", "--wasm-interpret-all /engines/node/node-timer.js {wasm_file_path}", True),
 
-    "wasmer" : VMDescriptor(join("target", "release", "wasmer"), "run {wasm_file_path}", True),
+    "wagon"  : VMDescriptor("/engines/wagon/cmd/wasm-run/wasm-run", "{wasm_file_path}", False),
 
-    "wagon"  : VMDescriptor(join("cmd", "wasm-run"), "wasm_run {wasm_file_path}", False),
+    "wabt"   : VMDescriptor("/engines/wabt/bin/wasm-interp", "{wasm_file_path} --run-all-exports", False),
 
-    "asmble" : VMDescriptor(join("asmble", "bin", "asmble"),
-                            "invoke -in {wasm_file_path} {function_name} -defmaxmempages 20000", True)
+    "wasmer" : VMDescriptor("/engines/wasmer/target/release/wasmer", "run {wasm_file_path}", True),
+
+    "wavm"   : VMDescriptor("/engines/wavm-build/bin/wavm-run", "{wasm_file_path} -f {function_name}", True),
+
+    "lifePolymerase" : VMDescriptor("/engines/life/life", "-polymerase -entry {function_name} {wasm_file_path}", True),
+
+    "life"   : VMDescriptor("/engines/life/life", "-entry {function_name} {wasm_file_path}", False),
+
+    "wasmi"  : VMDescriptor("/engines/wasmi/target/release/examples/invoke", "{wasm_file_path} {function_name}", False),
+
+#    "wagon"  : VMDescriptor("/engines/wagon/cmd/wasm-run/wasm-run", "{wasm_file_path}", False),
+
+#    "wabt"   : VMDescriptor("/engines/wabt/bin/wasm-interp", "{wasm_file_path} --run-all-exports", False),
+
+    # we have binaryen, but calling wasm-shell -e main is not working
+
+    #"asmble" : VMDescriptor(join("asmble", "bin", "asmble"),
+    #                        "invoke -in {wasm_file_path} {function_name} -defmaxmempages 20000", True)
 }
