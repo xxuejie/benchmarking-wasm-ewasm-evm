@@ -71,7 +71,6 @@ RUN cd wavm-build && cmake -G Ninja ../WAVM -DCMAKE_BUILD_TYPE=RelWithDebInfo
 RUN cd wavm-build && ninja
 
 
-
 # install binaryen
 #RUN git clone https://github.com/WebAssembly/binaryen.git
 #RUN cd binaryen && cmake . && make
@@ -81,17 +80,19 @@ RUN cd wavm-build && ninja
 # download wasmer binary
 #RUN curl https://get.wasmer.io -sSfL | sh
 #RUN /bin/bash -c "source /root/.wasmer/wasmer.sh"
+
 # build wasmer from source
-# latest wasmer release 0.1.4 is currently broken with recent rustc versions. use 1.31.0
-
-# wasmer bench-release 0.1.4 has segmentation violation with 1.32.0
-#RUN rustup default 1.32.0
-
+# wasmer release 0.1.4 has segmentation violation with rustc 1.32.0. use 1.31.1
 RUN rustup default 1.31.1
 
+# another bug where running wasmer with python `Popen(stderr=subprocess.STDOUT)`
+# causes an error: `Runtime error: trap at 0x0 - illegal instruction`.
+# the fix is to run Popen without the stderr flag.
+
+# latest wasmer master (2019-2-16) is much slower than 0.1.4 release from December 2018
 #RUN git clone --single-branch --branch bench-compile-time https://github.com/cdetrio/wasmer.git
+
 RUN git clone --single-branch --branch bench-release https://github.com/cdetrio/wasmer.git
-#RUN cd wasmer && cargo install --path .
 RUN cd wasmer && cargo build --release
 
 
@@ -105,19 +106,20 @@ RUN git clone --single-branch --branch bench-times https://github.com/cdetrio/wa
 RUN cd wagon/cmd/wasm-run && go build
 
 
+# install python modules needed for benchmarking script
+RUN pip3 install click durationpy
+# TODO: alias python to python3
+
 # install nodejs
 #RUN mkdir node
 RUN mkdir -p node
 RUN cd node && curl -fsSLO --compressed https://nodejs.org/dist/v11.10.0/node-v11.10.0-linux-x64.tar.gz
 RUN cd node && tar -xvf node-v11.10.0-linux-x64.tar.gz -C /usr/local/ --strip-components=1 --no-same-owner
-#RUN ln -s /usr/local/bin/node /usr/local/bin/nodejs
 RUN cd node && ln -s /usr/local/bin/node ./node
 COPY node-timer.js ./node/node-timer.js
 
 
-RUN pip3 install click durationpy
-
-
+# copy benchmarking scripts
 COPY ./wasmfiles /wasmfiles
 COPY ./bencher /bencher
 RUN mkdir -p /testresults

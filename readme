@@ -1,4 +1,7 @@
 
 
+$ docker build . -t wasm-engines
+
+## todo: mount with volume to save benchmark result csv files
 $ docker run -it --entrypoint=/bin/bash --security-opt seccomp=./seccompprofile.json wasm-engines
 

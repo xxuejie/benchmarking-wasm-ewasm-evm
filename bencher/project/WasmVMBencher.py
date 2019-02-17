@@ -187,7 +187,7 @@ class WasmVMBencher:
       exec_line = stdoutlines[time_parse_info['exec_line_num']]
       exec_match = re.search(time_parse_info['exec_regex'], exec_line)
       exec_time = durationpy.from_str(exec_match[1])
-      return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=runtime.total_seconds())
+      return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=exec_time.total_seconds())
 
 """02/16/2019 09:56:29 PM <wasm_bencher>: /engines/wagon/cmd/wasm-run/wasm-run /wasmfiles/ecpairing.wasm
 parse time: 10.763108ms
@@ -204,4 +204,12 @@ parse time: 45430us
 exec time: 62390657us
 """
 
-
+"""02/17/2019 07:14:04 PM <wasm_bencher>: /engines/node/node --wasm-interpret-all /engines/node/node-timer.js /wasmfiles/ecpairing.wasm
+args: [ '/wasmfiles/ecpairing.wasm' ]
+---- reading wasm file..
+---- wasm file read.
+instantiate: 67.677ms
+---- calling main...
+run-main: 13406.809ms
+---- wasm returns: undefined
+"""
