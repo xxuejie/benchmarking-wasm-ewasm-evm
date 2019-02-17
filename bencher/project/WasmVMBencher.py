@@ -181,6 +181,7 @@ class WasmVMBencher:
       end_time = time()
       total_time = end_time - start_time
       stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
+      print(stdoutlines.join("\n"))
       compile_line = stdoutlines[time_parse_info['compile_line_num']]
       compile_match = re.search(time_parse_info['compile_regex'], compile_line)
       compile_time = durationpy.from_str(compile_match[1])
