@@ -120,9 +120,9 @@ COPY node-timer.js ./node/node-timer.js
 
 
 # copy benchmarking scripts
+RUN mkdir -p /testresults
 COPY ./wasmfiles /wasmfiles
 COPY ./bencher /bencher
-RUN mkdir -p /testresults
 
 WORKDIR /bencher
 

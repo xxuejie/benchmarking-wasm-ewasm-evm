@@ -50,7 +50,7 @@ vm_descriptors = {
 
     "v8-turbofan" : VMDescriptor("/engines/node/node", "--no-liftoff /engines/node/node-timer.js {wasm_file_path}", True),
 
-    "v8-interpreter" : VMDescriptor("/engines/node/node", "--wasm-interpret-all /engines/node/node-timer.js {wasm_file_path}", True),
+    "v8-interpreter" : VMDescriptor("/engines/node/node", "--wasm-interpret-all /engines/node/node-timer.js {wasm_file_path}", False),
 
     "wagon"  : VMDescriptor("/engines/wagon/cmd/wasm-run/wasm-run", "{wasm_file_path}", False),
 

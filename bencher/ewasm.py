@@ -13,7 +13,7 @@ from os.path import join
 
 test_descriptors = {
     'ecpairing': '/wasmfiles/ecpairing.wasm',
-    'guido-fuzzer-find-2-norotates': '/wasmfiles/guido-fuzzer-find-2-norotates.wasm'
+    #'guido-fuzzer-find-2-norotates': '/wasmfiles/guido-fuzzer-find-2-norotates.wasm'
 }
 
 

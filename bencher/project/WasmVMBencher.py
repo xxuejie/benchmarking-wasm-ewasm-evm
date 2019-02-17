@@ -100,6 +100,8 @@ class WasmVMBencher:
                         result_record = self.do_wavm_test(cmd)
                     elif vm == "wasmer":
                         result_record = self.do_wasmer_test(cmd)
+                    elif vm == "v8-liftoff" or vm == "v8-turbofan" or vm == "v8-interpreter":
+                        result_record = self.do_v8_test(cmd)
                     else:
                         result_record = self.__do_one_test(cmd)
                     results[vm][test_name].append(result_record)
@@ -171,24 +173,42 @@ class WasmVMBencher:
         }
         return self.doCompilerTest(vm_cmd, time_parse_info)
 
+    def do_v8_test(self, vm_cmd):
+        """02/17/2019 07:14:04 PM <wasm_bencher>: /engines/node/node --wasm-interpret-all /engines/node/node-timer.js /wasmfiles/ecpairing.wasm
+        args: [ '/wasmfiles/ecpairing.wasm' ]
+        ---- reading wasm file..
+        ---- wasm file read.
+        instantiate: 67.677ms
+        ---- calling main...
+        run-main: 13406.809ms
+        ---- wasm returns: undefined
+        """
+        time_parse_info = {
+          'compile_line_num' : 3,
+          'exec_line_num' : 5,
+          'compile_regex': "instantiate: ([\w\.]+)",
+          'exec_regex': "run-main: ([\w\.]+)"
+        }
+        return self.doCompilerTest(vm_cmd, time_parse_info)
+
     def doCompilerTest(self, vm_cmd, time_parse_info, stderr_redir=True):
-      start_time = time()
-      if stderr_redir:
-        vm_process = Popen(vm_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
-      else:
-        vm_process = Popen(vm_cmd, stdout=subprocess.PIPE, shell=True)
-      vm_process.wait(None)
-      end_time = time()
-      total_time = end_time - start_time
-      stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
-      print(stdoutlines.join("\n"))
-      compile_line = stdoutlines[time_parse_info['compile_line_num']]
-      compile_match = re.search(time_parse_info['compile_regex'], compile_line)
-      compile_time = durationpy.from_str(compile_match[1])
-      exec_line = stdoutlines[time_parse_info['exec_line_num']]
-      exec_match = re.search(time_parse_info['exec_regex'], exec_line)
-      exec_time = durationpy.from_str(exec_match[1])
-      return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=exec_time.total_seconds())
+        start_time = time()
+        if stderr_redir:
+            vm_process = Popen(vm_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+        else:
+            vm_process = Popen(vm_cmd, stdout=subprocess.PIPE, shell=True)
+        vm_process.wait(None)
+        end_time = time()
+        total_time = end_time - start_time
+        stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
+        print(("").join(stdoutlines))
+        compile_line = stdoutlines[time_parse_info['compile_line_num']]
+        compile_match = re.search(time_parse_info['compile_regex'], compile_line)
+        compile_time = durationpy.from_str(compile_match[1])
+        exec_line = stdoutlines[time_parse_info['exec_line_num']]
+        exec_match = re.search(time_parse_info['exec_regex'], exec_line)
+        exec_time = durationpy.from_str(exec_match[1])
+        return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=exec_time.total_seconds())
 
 """02/16/2019 09:56:29 PM <wasm_bencher>: /engines/wagon/cmd/wasm-run/wasm-run /wasmfiles/ecpairing.wasm
 parse time: 10.763108ms
@@ -205,12 +225,3 @@ parse time: 45430us
 exec time: 62390657us
 """
 
-"""02/17/2019 07:14:04 PM <wasm_bencher>: /engines/node/node --wasm-interpret-all /engines/node/node-timer.js /wasmfiles/ecpairing.wasm
-args: [ '/wasmfiles/ecpairing.wasm' ]
----- reading wasm file..
----- wasm file read.
-instantiate: 67.677ms
----- calling main...
-run-main: 13406.809ms
----- wasm returns: undefined
-"""
