@@ -46,15 +46,15 @@ test_export_function_name = "main"
 # /root/.wasmer/bin/wasmer
 
 vm_descriptors = {
+    "wagon"  : VMDescriptor("/engines/wagon/cmd/wasm-run/wasm-run", "{wasm_file_path}", False),
+
+    "wabt"   : VMDescriptor("/engines/wabt/bin/wasm-interp", "{wasm_file_path} --run-all-exports", False),
+
     "v8-liftoff" : VMDescriptor("/engines/node/node", "--liftoff --no-wasm-tier-up /engines/node/node-timer.js {wasm_file_path}", True),
 
     "v8-turbofan" : VMDescriptor("/engines/node/node", "--no-liftoff /engines/node/node-timer.js {wasm_file_path}", True),
 
     "v8-interpreter" : VMDescriptor("/engines/node/node", "--wasm-interpret-all /engines/node/node-timer.js {wasm_file_path}", False),
-
-    "wagon"  : VMDescriptor("/engines/wagon/cmd/wasm-run/wasm-run", "{wasm_file_path}", False),
-
-    "wabt"   : VMDescriptor("/engines/wabt/bin/wasm-interp", "{wasm_file_path} --run-all-exports", False),
 
     "wasmer" : VMDescriptor("/engines/wasmer/target/release/wasmer", "run {wasm_file_path}", True),
 

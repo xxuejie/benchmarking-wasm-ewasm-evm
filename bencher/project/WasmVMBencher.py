@@ -102,6 +102,10 @@ class WasmVMBencher:
                         result_record = self.do_wasmer_test(cmd)
                     elif vm == "v8-liftoff" or vm == "v8-turbofan" or vm == "v8-interpreter":
                         result_record = self.do_v8_test(cmd)
+                    elif vm == "wagon":
+                        result_record = self.do_wagon_test(cmd)
+                    elif vm == "wabt":
+                        result_record = self.do_wabt_test(cmd)
                     else:
                         result_record = self.__do_one_test(cmd)
                     results[vm][test_name].append(result_record)
@@ -191,6 +195,37 @@ class WasmVMBencher:
         }
         return self.doCompilerTest(vm_cmd, time_parse_info)
 
+    def do_wabt_test(self, vm_cmd):
+        """02/16/2019 09:56:43 PM <wasm_bencher>: /engines/wabt/bin/wasm-interp /wasmfiles/ecpairing.wasm --run-all-exports
+        ec_pairing() => error: argument type mismatch
+        main() =>
+        parse time: 45430us
+        exec time: 62390657us
+        """
+        time_parse_info = {
+          'compile_line_num' : -2,
+          'exec_line_num' : -1,
+          'compile_regex': "parse time: ([\w]+)",
+          'exec_regex': "exec time: ([\w]+)"
+        }
+        return self.doCompilerTest(vm_cmd, time_parse_info)
+
+    def do_wagon_test(self, vm_cmd):
+        """02/16/2019 09:56:29 PM <wasm_bencher>: /engines/wagon/cmd/wasm-run/wasm-run /wasmfiles/ecpairing.wasm
+        parse time: 10.763108ms
+        ec_pairing() => wasm-run: running exported functions with input parameters is not supported
+        main() =>
+        memory() => wasm-run: running exported functions with input parameters is not supported
+        exec time: 13.551017849s
+        """
+        time_parse_info = {
+          'compile_line_num' : 0,
+          'exec_line_num' : -1,
+          'compile_regex': "parse time: ([\w\.]+)",
+          'exec_regex': "exec time: ([\w\.]+)"
+        }
+        return self.doCompilerTest(vm_cmd, time_parse_info)
+
     def doCompilerTest(self, vm_cmd, time_parse_info, stderr_redir=True):
         start_time = time()
         if stderr_redir:
@@ -210,18 +245,7 @@ class WasmVMBencher:
         exec_time = durationpy.from_str(exec_match[1])
         return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=exec_time.total_seconds())
 
-"""02/16/2019 09:56:29 PM <wasm_bencher>: /engines/wagon/cmd/wasm-run/wasm-run /wasmfiles/ecpairing.wasm
-parse time: 10.763108ms
-ec_pairing() => wasm-run: running exported functions with input parameters is not supported
-main() =>
-memory() => wasm-run: running exported functions with input parameters is not supported
-exec time: 13.551017849s
-"""
 
-"""02/16/2019 09:56:43 PM <wasm_bencher>: /engines/wabt/bin/wasm-interp /wasmfiles/ecpairing.wasm --run-all-exports
-ec_pairing() => error: argument type mismatch
-main() =>
-parse time: 45430us
-exec time: 62390657us
-"""
+
+
 
