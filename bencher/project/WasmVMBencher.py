@@ -126,56 +126,36 @@ class WasmVMBencher:
         end_time = time()
         return Record(end_time - start_time)
 
-    def do_wavm_test(self, vm_cmd):
-        """02/16/2019 12:03:32 AM <wasm_bencher>: /engines/wavm-build/bin/wavm-run /wasmfiles/ecpairing.wasm -f main
-           Instantiation/compile time: 1654661us
-           Invoke/run time: 48594us
-        """
-        start_time = time()
-        vm_process = Popen(vm_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
-        vm_process.wait(None)
-        end_time = time()
-        total_time = end_time - start_time
-        stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
-        compilation_line = stdoutlines[0]
-        runtime_line = stdoutlines[1]
-        compile_match = re.search("Instantiation/compile time: ([\w\.]+)", compilation_line)
-        compile_time = compile_match[1]
-        compile_time = durationpy.from_str(compile_time)
-        runtime_match = re.search("Invoke/run time: ([\w\.]+)", runtime_line)
-        runtime = runtime_match[1]
-        runtime = durationpy.from_str(runtime)
-        execution_time = runtime.total_seconds()
-        return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=execution_time)
-
     def do_wasmer_test(self, vm_cmd):
         """02/15/2019 11:23:55 PM <wasm_bencher>: /engines/wasmer/target/release/wasmer run /wasmfiles/ecpairing.wasm
            compile time: 88.381ms
            total run time (compile + execute): 172.762637ms
            02/15/2019 11:23:55 PM <wasm_bencher>: wasmer result collected: time=0.18068552017211914 compiletime=0.0
-        """
-        start_time = time()
-        vm_process = Popen(vm_cmd, stdout=subprocess.PIPE, shell=True)
-        vm_process.wait(None)
-        end_time = time()
-        total_time = end_time - start_time
-        stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
-        print("wasmer stdoutlines: {}".format(stdoutlines))
-        compilation_line = stdoutlines[0]
-        runtime_line = stdoutlines[1]
-        compile_match = re.search("compile time: ([\w\.]+)", compilation_line)
-        compile_time = compile_match[1]
-        compile_time = durationpy.from_str(compile_time)
-        runtime_match = re.search("total run time \(compile \+ execute\): ([\w\.]+)", runtime_line)
-        # for a different wasmer patch that prints "run time: 172.762637ms"
+        """ 
+        # the other wasmer patch prints "run time: 172.762637ms"
         #runtime_match = re.search("run time: ([\w\.]+)", runtime_line)
-        runtime = runtime_match[1]
-        runtime = durationpy.from_str(runtime)
-        execution_time = runtime.total_seconds() - compile_time.total_seconds()
-        # for the other wasmer patch that prints "run time: 172.762637ms"
-        #execution_time = runtime.total_seconds()
-        return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=execution_time)
+        time_parse_info = {
+          'compile_line_num' : 0,
+          'exec_line_num' : 1,
+          'compile_regex': "compile time: ([\w\.]+)",
+          'exec_regex': "total run time \(compile \+ execute\): ([\w\.]+)"
+        }
+        result = self.doCompilerTest(vm_cmd, time_parse_info, stderr_redir=False)
+        execution_time = result.exec_time - result.compile_time
+        return Record(time=result.time, compile_time=result.compile_time, exec_time=execution_time)
 
+    def do_wavm_test(self, vm_cmd):
+        """02/16/2019 12:03:32 AM <wasm_bencher>: /engines/wavm-build/bin/wavm-run /wasmfiles/ecpairing.wasm -f main
+           Instantiation/compile time: 1654661us
+           Invoke/run time: 48594us
+        """
+        time_parse_info = {
+          'compile_line_num' : 0,
+          'exec_line_num' : 1,
+          'compile_regex': "Instantiation/compile time: ([\w\.]+)",
+          'exec_regex': "Invoke/run time: ([\w\.]+)"
+        }
+        return self.doCompilerTest(vm_cmd, time_parse_info)
 
     def do_life_poly_test(self, vm_cmd):
         """02/15/2019 03:34:52 PM <wasm_bencher>: /engines/life/life -polymerase -entry main /wasmfiles/ecpairing.wasm
@@ -183,23 +163,31 @@ class WasmVMBencher:
            [Polymerase] Compilation finished successfully in 9.683856378s.
            return value = 0, duration = 46.712798ms
         """
-        start_time = time()
+        time_parse_info = {
+          'compile_line_num' : 1,
+          'exec_line_num' : 2,
+          'compile_regex': "Compilation finished successfully in ([\w\.]+s).",
+          'exec_regex': "duration = ([\w\.]+)"
+        }
+        return self.doCompilerTest(vm_cmd, time_parse_info)
+
+    def doCompilerTest(self, vm_cmd, time_parse_info, stderr_redir=True):
+      start_time = time()
+      if stderr_redir:
         vm_process = Popen(vm_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
-        vm_process.wait(None)
-        end_time = time()
-        total_time = end_time - start_time
-        stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
-        compilation_line = stdoutlines[1]
-        duration_line = stdoutlines[2]
-        runtime_match = re.search("duration = ([\w\.]+)", duration_line)
-        runtime = runtime_match[1]
-        runtime = durationpy.from_str(runtime)
-        compile_match = re.search("Compilation finished successfully in ([\w\.]+s).", compilation_line)
-        compiletime = compile_match[1]
-        compiletime = durationpy.from_str(compiletime)
-        return Record(time=total_time, compile_time=compiletime.total_seconds(), exec_time=runtime.total_seconds())
-
-
+      else:
+        vm_process = Popen(vm_cmd, stdout=subprocess.PIPE, shell=True)
+      vm_process.wait(None)
+      end_time = time()
+      total_time = end_time - start_time
+      stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
+      compile_line = stdoutlines[time_parse_info['compile_line_num']]
+      compile_match = re.search(time_parse_info['compile_regex'], compile_line)
+      compile_time = durationpy.from_str(compile_match[1])
+      exec_line = stdoutlines[time_parse_info['exec_line_num']]
+      exec_match = re.search(time_parse_info['exec_regex'], exec_line)
+      exec_time = durationpy.from_str(exec_match[1])
+      return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=runtime.total_seconds())
 
 """02/16/2019 09:56:29 PM <wasm_bencher>: /engines/wagon/cmd/wasm-run/wasm-run /wasmfiles/ecpairing.wasm
 parse time: 10.763108ms
