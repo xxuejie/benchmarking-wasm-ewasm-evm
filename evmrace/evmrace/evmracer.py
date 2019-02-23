@@ -3,6 +3,7 @@
 import jinja2, json, os, shutil
 from functools import reduce
 import subprocess
+import durationpy
 
 def get_rust_bytes(hex_str):
     tmp = map(''.join, zip(*[iter(hex_str)]*2))
@@ -11,14 +12,67 @@ def get_rust_bytes(hex_str):
     tmp = reduce(lambda x, y: x+', '+y, tmp)
     return '[ '+tmp+' ]'
 
-"""
-def fill_template(template_file, args):
-    templateLoader = jinja2.FileSystemLoader(os.path.dirname(template_file))
-    templateEnv = jinja2.Environment(loader=templateLoader)
-    template = templateEnv.get_template(os.path.split(template_file)[1])
-    outputText = template.render(args)  # this is where to put args to the template renderer
-    return outputText
-"""
+def bench_rust_binary(rustdir, input_name, native_exec):
+    print("running rust native {}...\n{}".format(input_name, native_exec))
+    bench_times = []
+    for i in range(1,20):
+        rust_process = subprocess.Popen(native_exec, cwd=rustdir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+        rust_process.wait(None)
+        stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
+        print(("").join(stdoutlines), end="")
+        elapsedline = stdoutlines[0]
+        elapsedmatch = re.search("Time elapsed in bench() is: ([\w\.]+)", elapsedline)
+        elapsed_time = durationpy.from_str(elapsedmatch[1])
+        bench_times.append(elapsed_time.total_seconds())
+    return bench_times
+
+def do_rust_bench(benchname, input):
+    #rustsrc = "{}/rust-code/src/bench.rs".format(os.path.abspath(benchname))
+    rustsrc = "{}/rust-code".format(os.path.abspath(benchname))
+    rusttemplate = "{}/src/bench.rs".format(rustsrc)
+
+    filldir = os.path.abspath("{}/rust-code-filled".format(benchname))
+    if os.path.exists(filldir):
+        shutil.rmtree(filldir)
+    shutil.copytree(rustsrc, filldir)
+
+    input_len = int(len(input['input']) / 2)
+    input_str = "let input: [u8; {}] = {};".format(input_len, get_rust_bytes(input['input']))
+    expected_len = int(len(input['expected']) / 2)
+    expected_str = "let expected: [u8; {}] = {};".format(expected_len, get_rust_bytes(input['expected']))
+
+    with open(rusttemplate) as file_:
+        template = jinja2.Template(file_.read())
+        filledrust = template.render(input=input_str, expected=expected_str)
+
+    rustfileout = "{}/src/bench.rs".format(filldir)
+    with open(rustfileout, 'w') as outfile:
+        outfile.write(filledrust)
+
+    # compile rust code
+    rust_native_cmd = "cargo build --release --bin {}_native".format(benchname)
+    print("compiling rust native {}...\n{}".format(input['name'], rust_native_cmd))
+    rust_process = subprocess.Popen(rust_native_cmd, cwd=filldir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+    rust_process.wait(None)
+    stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
+    print(("").join(stdoutlines), end="")
+    # native binary is at ./target/release/sha1_native
+
+    rust_wasm_cmd = "cargo build --release --lib --target wasm32-unknown-unknown"
+    print("compiling rust wasm {}...\n{}".format(input['name'], rust_wasm_cmd))
+    rust_process = subprocess.Popen(rust_wasm_cmd, cwd=filldir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+    rust_process.wait(None)
+    stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
+    print(("").join(stdoutlines), end="")
+    # wasm is at ./target/wasm32-unknown-unkown/release/sha1_wasm.wasm
+    wasmbin = "{}/target/wasm32-unknown-unknown/release/{}_wasm.wasm".format(filldir, benchname)
+    wasmdir = os.path.abspath("{}/wasmfiles".format(benchname))
+    wasmoutfile = "{}/{}.wasm".format(wasmdir, input['name'])
+    shutil.copy(wasmbin, wasmoutfile)
+
+    # run rust binary
+    native_times = bench_rust_binary(filldir, input['name'], "./target/release/{}_native".format(benchname))
+    return native_times
 
 def do_go_bench(benchname, input):
     #COPY ./sha1_test.go /go-ethereum/core/vm/runtime/sha_test.go
@@ -62,74 +116,20 @@ def do_go_bench(benchname, input):
     ok      github.com/ethereum/go-ethereum/core/vm/runtime 13.472s
     """
 
-
-def bench_rust_binary(rustdir, input_name, native_exec):
-    print("running rust native {}...\n{}".format(input_name, native_exec))
-    for i in range(1,20):
-      rust_process = subprocess.Popen(native_exec, cwd=rustdir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
-      rust_process.wait(None)
-      stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
-      print(("").join(stdoutlines), end="")
-
-
-def do_rust_bench(benchname, input):
-    #rustsrc = "{}/rust-code/src/bench.rs".format(os.path.abspath(benchname))
-    rustsrc = "{}/rust-code".format(os.path.abspath(benchname))
-    rusttemplate = "{}/src/bench.rs".format(rustsrc)
-
-    filldir = os.path.abspath("{}/rust-code-filled".format(benchname))
-    shutil.rmtree(filldir)
-    shutil.copytree(rustsrc, filldir)
-
-    input_len = int(len(input['input']) / 2)
-    input_str = "let input: [u8; {}] = {};".format(input_len, get_rust_bytes(input['input']))
-    expected_len = int(len(input['expected']) / 2)
-    expected_str = "let expected: [u8; {}] = {};".format(expected_len, get_rust_bytes(input['expected']))
-
-    with open(rusttemplate) as file_:
-        template = jinja2.Template(file_.read())
-        filledrust = template.render(input=input_str, expected=expected_str)
-
-    rustfileout = "{}/src/bench.rs".format(filldir)
-    with open(rustfileout, 'w') as outfile:
-        outfile.write(filledrust)
-
-    # compile rust code
-    rust_native_cmd = "cargo build --release --bin {}_native".format(benchname)
-    print("compiling rust native {}...\n{}".format(input['name'], rust_native_cmd))
-    rust_process = subprocess.Popen(rust_native_cmd, cwd=filldir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
-    rust_process.wait(None)
-    stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
-    print(("").join(stdoutlines), end="")
-    # native binary is at ./target/release/sha1_native
-
-    rust_wasm_cmd = "cargo build --release --lib --target wasm32-unknown-unknown"
-    print("compiling rust wasm {}...\n{}".format(input['name'], rust_wasm_cmd))
-    rust_process = subprocess.Popen(rust_wasm_cmd, cwd=filldir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
-    rust_process.wait(None)
-    stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
-    print(("").join(stdoutlines), end="")
-    # wasm is at ./target/wasm32-unknown-unkown/release/sha1_wasm.wasm
-
-    # run rust binary
-    bench_rust_binary(filldir, input['name'], "./target/release/{}_native".format(benchname))
-
-
 def main():
     benchdirs = [dI for dI in os.listdir('./') if os.path.isdir(os.path.join('./',dI))]
-
+    native_benchmarks = {}
     for benchname in benchdirs:
        with open("{}/{}-inputs.json".format(benchname, benchname)) as f:
            bench_inputs = json.load(f)
            for input in bench_inputs:
-             #input['name']
-             #input['input']
-             #input['expected']
-             #do_go_bench(benchname, input)
-             do_rust_bench(benchname, input)
+               #input['name'], input['input'], input['expected']
+               #do_go_bench(benchname, input)
+               native_input_times = do_rust_bench(benchname, input)
+               native_benchmarks[input['name']] = native_input_times
 
-
-
+    print("got native_benchmarks:", native_benchmarks)
+    # todo: write to csv
 
 if __name__ == "__main__":
     main()

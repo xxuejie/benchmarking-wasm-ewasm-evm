@@ -1,6 +1,6 @@
 mod bench;
 
-use std::time::{Duration, Instant};
+use std::time::{Instant};
 
 pub fn main() {
     let start = Instant::now();
