@@ -29,11 +29,19 @@ def do_go_bench(benchname, input):
     go_cmd = "go test -bench Benchmark{} -benchtime 5s".format(goBenchName)
     gofile = "{}_test.go".format(benchname)
 
-    # copy benchmark file
-    srcfile = os.path.abspath(benchname) + "/" + gofile
-    shutil.copy(srcfile, destdir)
-
     # fill go template
+
+    with open("./" + benchname + "/" + gofile) as file_:
+        template = jinja2.Template(file_.read())
+        filledgo = template.render(input=input['input'], expected=input['expected'])
+
+    gofileout = "{}/{}_filled_test.go".format(os.path.abspath(benchname), benchname)
+
+    with open(gofileout, 'w') as outfile:
+        outfile.write(filledgo)
+
+    # copy benchmark file
+    shutil.copy(gofileout, destdir)
 
     # run go command
     print("running benchmark {}...".format(input['name']))
@@ -41,6 +49,19 @@ def do_go_bench(benchname, input):
     go_process.wait(None)
     stdoutlines = [str(line, 'utf8') for line in go_process.stdout]
     print(("").join(stdoutlines), end="")
+    """
+    running benchmark sha1-10808-bits...
+    gasUsed: 1543776
+    goos: linux
+    goarch: amd64
+    pkg: github.com/ethereum/go-ethereum/core/vm/runtime
+    BenchmarkSha1-4         gasUsed: 1543776
+    gasUsed: 1543776
+         200          44914864 ns/op
+    PASS
+    ok      github.com/ethereum/go-ethereum/core/vm/runtime 13.472s
+    """
+
 
 
 #def fill_bench_templates(benchname, input):
