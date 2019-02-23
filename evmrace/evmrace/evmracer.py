@@ -44,7 +44,7 @@ def do_go_bench(benchname, input):
     shutil.copy(gofileout, destdir)
 
     # run go command
-    print("running benchmark {}...".format(input['name']))
+    print("running go benchmark {}...\n{}".format(input['name'], go_cmd))
     go_process = subprocess.Popen(go_cmd, cwd=destdir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
     go_process.wait(None)
     stdoutlines = [str(line, 'utf8') for line in go_process.stdout]
@@ -62,6 +62,60 @@ def do_go_bench(benchname, input):
     ok      github.com/ethereum/go-ethereum/core/vm/runtime 13.472s
     """
 
+
+def bench_rust_binary(rustdir, native_exec):
+    print("running rust native {}...\n{}".format(input['name']), native_exec)
+    for i in range(1,10):
+      rust_process = subprocess.Popen(native_exec, cwd=rustdir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+      rust_process.wait(None)
+      stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
+      print(("").join(stdoutlines), end="")
+
+
+def do_rust_bench(benchname, input):
+    #rustsrc = "{}/rust-code/src/bench.rs".format(os.path.abspath(benchname))
+    rustsrc = "{}/rust-code".format(os.path.abspath(benchname))
+
+    filldir = os.path.abs("rust-code-filled")
+    if not os.path.exists(filldir):
+        os.mkdir(filldir)
+
+    shutil.copytree(rustsrc, filldir)
+    rusttemplate = "{}/src/bench.rs".format(filldr)
+
+    input_len = len(input['input']) / 2
+    input_str = "let input: [u8; {}] = {};".format(input_len, get_rust_bytes(input['input']))
+    expected_len = len(input['expected']) / 2
+    expected_str = "let expected: [u8; {}] = {};".format(expected_len, get_rust_bytes(input['expected']))
+
+    with open(rusttemplate) as file_:
+        template = jinja2.Template(file_.read())
+        # "let input: [u8; 2737] = [ 84u8, 173u8, 9u8, ... ];"
+        filledrust = template.render(input=input_str, expected=expected_str)
+
+    rustfileout = "{}/src/bench.rs".format(filldir, benchname)
+    with open(rustfileout, 'w') as outfile:
+        outfile.write(filledrust)
+
+    # compile rust code
+    rust_native_cmd = "cargo build --release --bin {}_native".format(input['name'])
+    print("compiling rust native {}...\n{}".format(input['name'], rust_native_cmd))
+    rust_process = subprocess.Popen(rust_native_cmd, cwd=filldir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+    rust_process.wait(None)
+    stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
+    print(("").join(stdoutlines), end="")
+    # native binary is at ./target/release/sha1_native
+
+    rust_wasm_cmd = "cargo build --release --lib --target wasm32-unknown-unknown"
+    print("compiling rust wasm {}...\n{}".format(input['name'], rust_wasm_cmd))
+    rust_process = subprocess.Popen(rust_wasm_cmd, cwd=filldir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+    rust_process.wait(None)
+    stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
+    print(("").join(stdoutlines), end="")
+    # wasm is at ./target/wasm32-unknown-unkown/release/sha1_wasm.wasm
+
+    # run rust binary
+    bench_rust_binary(filldir, "./target/release/{}_native".format(benchname))
 
 
 #def fill_bench_templates(benchname, input):
@@ -82,7 +136,8 @@ def main():
              #input['name']
              #input['input']
              #input['expected']
-             do_go_bench(benchname, input)
+             #do_go_bench(benchname, input)
+             do_rust_bench(benchname, input)
 
 
 
