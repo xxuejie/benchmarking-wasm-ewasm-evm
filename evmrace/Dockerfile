@@ -20,6 +20,15 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 
+# install rust
+RUN curl https://sh.rustup.rs -sSf | \
+    sh -s -- --default-toolchain stable -y && . $HOME/.cargo/env
+ENV PATH=/root/.cargo/bin:$PATH
+RUN rustup default nightly-2019-01-15
+
+RUN rustup target add wasm32-unknown-unknown
+
+
 # Install Go 1.11
 RUN add-apt-repository ppa:longsleep/golang-backports && apt-get update && apt-get install -y golang-go
 
