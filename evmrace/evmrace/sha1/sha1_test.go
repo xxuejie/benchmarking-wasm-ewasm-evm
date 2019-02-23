@@ -15,7 +15,7 @@ import (
 )
 
 
-func Benchmarksha1(b *testing.B) {
+func BenchmarkSha1(b *testing.B) {
 	//fmt.Println("Benchmarksha1.")
 	// https://etherscan.io/address/0x4e89a683dade995736457bde623e75f5840c2d34#code
 	var definition = `[{"constant":true,"inputs":[{"name":"data","type":"bytes"},{"name":"hash","type":"bytes"}],"name":"verify","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"pure","type":"function"}]`

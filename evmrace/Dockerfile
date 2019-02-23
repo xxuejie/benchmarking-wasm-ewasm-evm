@@ -33,7 +33,7 @@ RUN ln -s /root/go/src/github.com/ethereum/go-ethereum /go-ethereum
 
 
 # install python modules needed for benchmarking script
-RUN pip3 install durationpy
+RUN pip3 install durationpy jinja2
 # TODO: alias python to python3
 
 COPY ./evmrace /evmrace

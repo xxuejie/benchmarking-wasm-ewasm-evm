@@ -2,6 +2,7 @@
 
 import jinja2, json, os, shutil
 from functools import reduce
+import subprocess
 
 def get_rust_bytes(hex_str):
     tmp = map(''.join, zip(*[iter(hex_str)]*2))
@@ -23,23 +24,26 @@ def do_go_bench(benchname, input):
     #COPY ./sha1_test.go /go-ethereum/core/vm/runtime/sha_test.go
     #RUN cd /go-ethereum/core/vm/runtime && go test -bench BenchmarkSHA1 -benchtime 5s
     destdir = "/go-ethereum/core/vm/runtime/"
-    go_cmd = "go test -bench Benchmark{} -benchtime 5s".format(benchname)
+    # first letter must be capitalized
+    goBenchName = benchname[:1].upper() + benchname[1:]
+    go_cmd = "go test -bench Benchmark{} -benchtime 5s".format(goBenchName)
     gofile = "{}_test.go".format(benchname)
 
     # copy benchmark file
     srcfile = os.path.abspath(benchname) + "/" + gofile
     shutil.copy(srcfile, destdir)
+
     # fill go template
 
     # run go command
     print("running benchmark {}...".format(input['name']))
-    go_process = Popen(go_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+    go_process = subprocess.Popen(go_cmd, cwd=destdir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
     go_process.wait(None)
     stdoutlines = [str(line, 'utf8') for line in go_process.stdout]
     print(("").join(stdoutlines), end="")
 
 
-def fill_bench_templates(benchname, input):
+#def fill_bench_templates(benchname, input):
     # rust is in ./{benchname}/rust-code/src/bench.rs
     # go is in ./{benchname}/{benchname}_test.go
     #cargo build --release --bin sha1_native
