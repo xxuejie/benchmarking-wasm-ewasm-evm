@@ -9,6 +9,17 @@ RUN apt-get install -y software-properties-common git sudo build-essential wget 
     gcc musl-dev
 
 
+# Install Python stack
+RUN apt-get update \
+    && apt-get --yes --no-install-recommends install \
+        python3 python3-dev \
+        python3-pip python3-venv python3-wheel python3-setuptools \
+        build-essential \
+        python-dev \
+        graphviz git openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
+
 # Install Go 1.11
 RUN add-apt-repository ppa:longsleep/golang-backports && apt-get update && apt-get install -y golang-go
 
@@ -20,6 +31,10 @@ RUN ln -s /root/go/src/github.com/ethereum/go-ethereum /go-ethereum
 #COPY ./sha1_test.go /go-ethereum/core/vm/runtime/sha_test.go
 #RUN cd /go-ethereum/core/vm/runtime && go test -bench BenchmarkSHA1 -benchtime 5s
 
+
+# install python modules needed for benchmarking script
+RUN pip3 install durationpy
+# TODO: alias python to python3
 
 COPY ./evmrace /evmrace
 WORKDIR /evmrace
