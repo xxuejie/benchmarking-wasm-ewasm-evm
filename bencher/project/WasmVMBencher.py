@@ -104,6 +104,8 @@ class WasmVMBencher:
                         result_record = self.do_v8_test(cmd)
                     elif vm == "wagon":
                         result_record = self.do_wagon_test(cmd)
+                    elif vm == "wasmi":
+                        result_record = self.do_wasmi_test(cmd)
                     elif vm == "wabt":
                         result_record = self.do_wabt_test(cmd)
                     else:
@@ -151,13 +153,22 @@ class WasmVMBencher:
         return Record(time=result.time, compile_time=result.compile_time, exec_time=execution_time)
 
     def do_wavm_test(self, vm_cmd):
-        """02/16/2019 12:03:32 AM <wasm_bencher>: /engines/wavm-build/bin/wavm-run /wasmfiles/ecpairing.wasm -f main
+        """02/16/2019 12:03:32 AM <wasm_bencher>: /engines/wavm-build/bin/wavm-run /wasmfiles/example.wasm -f main
+           Object size: 3752                                                                                                                                                                                                                    │··············
+           Object size: 808                                                                                                                                                                                                                     │··············
+           Runtime exception: wavm.outOfBoundsMemoryAccess(+1684107116)                                                                                                                                                                         │··············
+           Call stack:                                                                                                                                                                                                                          │··············
+              wasm!/wasmfiles/guido-fuzzer-find-2-norotates.wasm!oldmain+5                                                                                                                                                                       │··············
+              wasm!/wasmfiles/guido-fuzzer-find-2-norotates.wasm!main+5                                                                                                                                                                          │··············
+              thnk!C to WASM thunk!()->i32+0
+              ....
            Instantiation/compile time: 1654661us
            Invoke/run time: 48594us
         """
+        # TODO: read file size
         time_parse_info = {
-          'compile_line_num' : 0,
-          'exec_line_num' : 1,
+          'compile_line_num' : -2,
+          'exec_line_num' : -1,
           'compile_regex': "Instantiation/compile time: ([\w\.]+)",
           'exec_regex': "Invoke/run time: ([\w\.]+)"
         }
@@ -222,6 +233,20 @@ class WasmVMBencher:
           'compile_line_num' : 0,
           'exec_line_num' : -1,
           'compile_regex': "parse time: ([\w\.]+)",
+          'exec_regex': "exec time: ([\w\.]+)"
+        }
+        return self.doCompilerTest(vm_cmd, time_parse_info)
+
+    def do_wasmi_test(self, vm_cmd):
+        """02/24/2019 05:01:58 PM <wasm_bencher>: /engines/wasmi/target/release/examples/invoke /wasmfiles/sha1-42488-bits.wasm main                                                                                                            │··············
+        module parse time: 3.499567ms                                                                                                                                                                                                        │··············
+        Result: None                                                                                                                                                                                                                         │··············
+        exec time: 4.630356ms
+        """
+        time_parse_info = {
+          'compile_line_num' : 0,
+          'exec_line_num' : -1,
+          'compile_regex': "module parse time: ([\w\.]+)",
           'exec_regex': "exec time: ([\w\.]+)"
         }
         return self.doCompilerTest(vm_cmd, time_parse_info)

@@ -54,7 +54,7 @@ vm_descriptors = {
 
     "v8-turbofan" : VMDescriptor("/engines/node/node", "--no-liftoff /engines/node/node-timer.js {wasm_file_path}", True),
 
-    "v8-interpreter" : VMDescriptor("/engines/node/node", "--wasm-interpret-all /engines/node/node-timer.js {wasm_file_path}", False),
+    "v8-interpreter" : VMDescriptor("/engines/node/node", "--wasm-interpret-all --liftoff --no-wasm-tier-up /engines/node/node-timer.js {wasm_file_path}", False),
 
     "wasmer" : VMDescriptor("/engines/wasmer/target/release/wasmer", "run {wasm_file_path}", True),
 
@@ -65,10 +65,6 @@ vm_descriptors = {
     "life"   : VMDescriptor("/engines/life/life", "-entry {function_name} {wasm_file_path}", False),
 
     "wasmi"  : VMDescriptor("/engines/wasmi/target/release/examples/invoke", "{wasm_file_path} {function_name}", False),
-
-#    "wagon"  : VMDescriptor("/engines/wagon/cmd/wasm-run/wasm-run", "{wasm_file_path}", False),
-
-#    "wabt"   : VMDescriptor("/engines/wabt/bin/wasm-interp", "{wasm_file_path} --run-all-exports", False),
 
     # we have binaryen, but calling wasm-shell -e main is not working
 

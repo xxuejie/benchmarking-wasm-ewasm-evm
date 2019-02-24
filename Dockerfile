@@ -45,11 +45,6 @@ RUN cd life && go mod vendor
 RUN cd life && go build
 
 
-# install wagon
-#RUN git clone https://github.com/go-interpreter/wagon
-#RUN cd wagon/cmd/wasm-run && go build
-
-
 # install rust
 RUN curl https://sh.rustup.rs -sSf | \
     sh -s -- --default-toolchain stable -y && . $HOME/.cargo/env
@@ -59,7 +54,7 @@ RUN rustup default 1.31.0
 
 
 # install wasmi
-RUN git clone https://github.com/paritytech/wasmi.git --recursive
+RUN git clone --single-branch --branch bench-time https://github.com/cdetrio/wasmi.git --recursive
 #RUN cd wasmi && cargo build --release
 RUN cd wasmi && cargo test --release
 

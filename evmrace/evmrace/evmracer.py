@@ -63,6 +63,8 @@ def do_rust_bench(benchname, input):
     stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
     print(("").join(stdoutlines), end="")
     # native binary is at ./target/release/sha1_native
+    exec_path = "{}/target/release/{}_native".format(filldir, benchname)
+    exec_size = os.path.getsize(exec_path)
 
     rust_wasm_cmd = "cargo build --release --lib --target wasm32-unknown-unknown"
     print("compiling rust wasm {}...\n{}".format(input['name'], rust_wasm_cmd))
@@ -80,8 +82,6 @@ def do_rust_bench(benchname, input):
 
     # run rust binary
     native_times = bench_rust_binary(filldir, input['name'], "./target/release/{}_native".format(benchname))
-    exec_path = "{}/target/release/{}_native".format(filldir, benchname)
-    exec_size = os.path.getsize(exec_path)
     return { 'bench_times': native_times, 'exec_size': exec_size }
 
 def do_go_bench(benchname, input):
