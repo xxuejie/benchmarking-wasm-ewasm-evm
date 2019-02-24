@@ -45,6 +45,7 @@ RUN ln -s /root/go/src/github.com/ethereum/go-ethereum /go-ethereum
 RUN pip3 install durationpy jinja2 pandas
 # TODO: alias python to python3
 
+RUN mkdir -p /evmraceresults
 COPY ./evmrace /evmrace
 WORKDIR /evmrace
 

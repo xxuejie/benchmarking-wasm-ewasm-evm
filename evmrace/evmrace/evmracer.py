@@ -4,6 +4,11 @@ import jinja2, json, re, os, shutil
 from functools import reduce
 import subprocess
 import nanodurationpy as durationpy
+import csv
+
+# output paths should be mounted docker volumes
+WASM_FILE_OUTPUT_PATH = "/evmwasmfiles"
+RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
 def get_rust_bytes(hex_str):
     tmp = map(''.join, zip(*[iter(hex_str)]*2))
@@ -14,6 +19,7 @@ def get_rust_bytes(hex_str):
 
 def bench_rust_binary(rustdir, input_name, native_exec):
     print("running rust native {}...\n{}".format(input_name, native_exec))
+    # TODO: get size of native exe file
     bench_times = []
     for i in range(1,20):
         rust_process = subprocess.Popen(native_exec, cwd=rustdir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
@@ -66,7 +72,7 @@ def do_rust_bench(benchname, input):
     print(("").join(stdoutlines), end="")
     # wasm is at ./target/wasm32-unknown-unkown/release/sha1_wasm.wasm
     wasmbin = "{}/target/wasm32-unknown-unknown/release/{}_wasm.wasm".format(filldir, benchname)
-    wasmdir = os.path.abspath("{}/wasmfiles".format(benchname))
+    wasmdir = os.path.abspath(WASM_FILE_OUTPUT_PATH)
     wasmoutfile = "{}/{}.wasm".format(wasmdir, input['name'])
     if not os.path.exists(wasmdir):
         os.mkdir(wasmdir)
@@ -123,26 +129,46 @@ def do_go_bench(benchname, input):
     gasused = gas_match[1]
     return {'gasUsed': gasused, 'time': ns_time.total_seconds()}
 
+
+def saveResults(native_benchmarks, evm_benchmarks):
+    native_file = "{}/native_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
+    with open(native_file, 'w', newline='') as bench_result_file:
+        fieldnames = ['test_name', 'elapsed_time', 'native_file_size']
+        writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for test_name, bench_times in native_benchmarks.items():
+            times_str = ", ".join(bench_times)
+            writer.writerow({"test_name" : test_name, "bench_times" : times_str, "native_file_size" : "100kb"})
+
+    evm_file = "{}/evm_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
+    with open(evm_file, 'w', newline='') as bench_result_file:
+        fieldnames = ['test_name', 'elapsed_time', 'gas_used']
+        writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
+        writer.writeheader()
+        for test_name, test_results in native_benchmarks.items():
+            writer.writerow({"test_name" : test_name, "elapsed_time" : test_results['time'], "gas_used" : test_results['gasUsed']})
+
+
 def main():
     benchdirs = [dI for dI in os.listdir('./') if os.path.isdir(os.path.join('./',dI))]
     native_benchmarks = {}
     evm_benchmarks = {}
     for benchname in benchdirs:
-      if benchname == "__pycache__":
-          continue
-       with open("{}/{}-inputs.json".format(benchname, benchname)) as f:
-           bench_inputs = json.load(f)
-           for input in bench_inputs:
-               #input['name'], input['input'], input['expected']
-               #do_go_bench(benchname, input)
-               native_input_times = do_rust_bench(benchname, input)
-               native_benchmarks[input['name']] = native_input_times
-               go_evm_times = do_go_bench(benchname, input)
-               evm_benchmarks[input['name']] = go_evm_times
+        if benchname == "__pycache__":
+            continue
+        with open("{}/{}-inputs.json".format(benchname, benchname)) as f:
+            bench_inputs = json.load(f)
+            for input in bench_inputs:
+                #input['name'], input['input'], input['expected']
+                #do_go_bench(benchname, input)
+                native_input_times = do_rust_bench(benchname, input)
+                native_benchmarks[input['name']] = native_input_times
+                go_evm_times = do_go_bench(benchname, input)
+                evm_benchmarks[input['name']] = go_evm_times
 
     print("got native_benchmarks:", native_benchmarks)
     print("got evm_benchmarks:", evm_benchmarks)
-    # todo: write to csv
+    saveResults(native_benchmarks, evm_benchmarks)
 
 if __name__ == "__main__":
     main()

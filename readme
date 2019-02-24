@@ -8,3 +8,10 @@ $ docker build . -t wasm-engines
 $ docker run -it --entrypoint=/bin/bash -v $(pwd)/testresults:/testresults --security-opt seccomp=./seccompprofile.json wasm-engines
 
 $ PYTHONIOENCODING=UTF-8 python3 ewasm.py
+
+
+$ cd evmrace
+$ docker build . -t evmrace
+$ docker run -it --entrypoint=/bin/bash -v $(pwd)/evmwasmfiles:/evmwasmfiles -v $(pwd)/evmraceresults:/evmraceresults
+
+$ PYTHONIOENCODING=UTF-8 python3 evmracer.py
