@@ -80,7 +80,9 @@ def do_rust_bench(benchname, input):
 
     # run rust binary
     native_times = bench_rust_binary(filldir, input['name'], "./target/release/{}_native".format(benchname))
-    return native_times
+    exec_path = "{}/target/release/{}_native".format(filldir, benchname)
+    exec_size = os.path.getsize(exec_path)
+    return { 'bench_times': native_times, 'exec_size': exec_size }
 
 def do_go_bench(benchname, input):
     #COPY ./sha1_test.go /go-ethereum/core/vm/runtime/sha_test.go
@@ -133,19 +135,20 @@ def do_go_bench(benchname, input):
 def saveResults(native_benchmarks, evm_benchmarks):
     native_file = "{}/native_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
     with open(native_file, 'w', newline='') as bench_result_file:
-        fieldnames = ['test_name', 'elapsed_time', 'native_file_size']
+        fieldnames = ['test_name', 'elapsed_times', 'native_file_size']
         writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
         writer.writeheader()
-        for test_name, bench_times in native_benchmarks.items():
+        for test_name, test_results in native_benchmarks.items():
+            bench_times = [str(t) for t in test_results['bench_times']]
             times_str = ", ".join(bench_times)
-            writer.writerow({"test_name" : test_name, "bench_times" : times_str, "native_file_size" : "100kb"})
+            writer.writerow({"test_name" : test_name, "elapsed_times" : times_str, "native_file_size" : test_results['exec_size']})
 
     evm_file = "{}/evm_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
     with open(evm_file, 'w', newline='') as bench_result_file:
         fieldnames = ['test_name', 'elapsed_time', 'gas_used']
         writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
         writer.writeheader()
-        for test_name, test_results in native_benchmarks.items():
+        for test_name, test_results in evm_benchmarks.items():
             writer.writerow({"test_name" : test_name, "elapsed_time" : test_results['time'], "gas_used" : test_results['gasUsed']})
 
 
