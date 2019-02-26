@@ -100,6 +100,8 @@ class WasmVMBencher:
                         result_record = self.do_wavm_test(cmd)
                     elif vm == "wasmer":
                         result_record = self.do_wasmer_test(cmd)
+                    elif vm == "wasmtime":
+                        result_record = self.do_wasmtime_test(cmd)
                     elif vm == "v8-liftoff" or vm == "v8-turbofan" or vm == "v8-interpreter":
                         result_record = self.do_v8_test(cmd)
                     elif vm == "wagon":
@@ -133,6 +135,20 @@ class WasmVMBencher:
         Popen(vm_cmd, shell=True).wait(None)
         end_time = time()
         return Record(end_time - start_time)
+
+    def do_wasmtime_test(self, vm_cmd):
+        """
+        module compile time: 78.598076ms
+        exec time: 73.882µs
+        """
+        time_parse_info = {
+          'compile_line_num' : 0,
+          'exec_line_num' : 1,
+          'compile_regex': "module compile time: ([\w\.]+)",
+          'exec_regex': "exec time: ([\w\.]+)"
+        }
+        result = self.doCompilerTest(vm_cmd, time_parse_info)
+        return Record(time=result.time, compile_time=result.compile_time, exec_time=result.exec_time)
 
     def do_wasmer_test(self, vm_cmd):
         """02/26/2019 04:43:14 PM <wasm_bencher>: /engines/wasmer-master/target/release/wasmer run /wasmfiles/sha1-42488-bits.wasm                                                                                                              │··············
