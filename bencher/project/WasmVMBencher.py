@@ -135,6 +135,20 @@ class WasmVMBencher:
         return Record(end_time - start_time)
 
     def do_wasmer_test(self, vm_cmd):
+        """02/26/2019 04:43:14 PM <wasm_bencher>: /engines/wasmer-master/target/release/wasmer run /wasmfiles/sha1-42488-bits.wasm                                                                                                              │··············
+        compile time: 58.099186ms                                                                                                                                                                                                            │··············
+        run time: 54.399µs
+        """
+        time_parse_info = {
+          'compile_line_num' : 0,
+          'exec_line_num' : 1,
+          'compile_regex': "compile time: ([\w\.]+)",
+          'exec_regex': "run time: ([\w\.]+)"
+        }
+        result = self.doCompilerTest(vm_cmd, time_parse_info)
+        return Record(time=result.time, compile_time=result.compile_time, exec_time=result.exec_time)
+
+    def do_wasmer_v014_test(self, vm_cmd):
         """02/15/2019 11:23:55 PM <wasm_bencher>: /engines/wasmer/target/release/wasmer run /wasmfiles/ecpairing.wasm
            compile time: 88.381ms
            total run time (compile + execute): 172.762637ms

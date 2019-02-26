@@ -9,27 +9,25 @@ import click
 import csv
 import logging
 import sys
-from os.path import join
+import os
 
-test_descriptors = {
-    'ecpairing': '/wasmfiles/ecpairing.wasm',
-    #'guido-fuzzer-find-2-norotates': '/wasmfiles/guido-fuzzer-find-2-norotates.wasm'
-}
+
+WASM_FILE_PATH = '/wasmfiles'
+
+BLACKLIST = ['ecpairing.wasm', 'guido-fuzzer-find-2-norotates.wasm', 'guido-fuzzer-find-1.wasm', 'guido-fuzzer-find-2.wasm']
+
+def getTestDescriptors():
+    test_descriptors = {}
+    for filename in os.listdir(WASM_FILE_PATH):
+        if filename.endswith(".wasm") and filename not in BLACKLIST:
+            test_descriptors[filename[:-5]] = WASM_FILE_PATH + "/" + filename
+    return test_descriptors
 
 
 def save_test_results(out_dir, results):
-    """Saves provided results to <vm_name>.csv files in a given directory.
-
-    Parameters
-    ----------
-    out_dir : str
-        A directory where the result will be saved.
-    results : {vm_name : {test_name : [Record]}}
-        Results that should be saved.
-
-    """
+    # TODO: move existing files to old-datetime-folder
     for vm in results:
-        with open(join(out_dir, vm + ".csv"), 'w', newline='') as bench_result_file:
+        with open(os.path.join(out_dir, vm + ".csv"), 'w', newline='') as bench_result_file:
             fieldnames = ['test_name', 'elapsed_time', 'compile_time', 'exec_time']
             writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
             writer.writeheader()
@@ -39,8 +37,6 @@ def save_test_results(out_dir, results):
                     writer.writerow({"test_name" : test_name, "elapsed_time" : record.time, "compile_time" : record.compile_time, "exec_time" : record.exec_time})
 
 
-
-
 def main():
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format='%(asctime)s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p')
@@ -48,6 +44,7 @@ def main():
     logger = logging.getLogger("wasm_bench_logger")
 
     vm_bencher = WasmVMBencher()
+    test_descriptors = getTestDescriptors()
     test_results = vm_bencher.run_tests(test_descriptors, vm_descriptors)
     print("ewasm.py test_results:")
     print(test_results)

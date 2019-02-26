@@ -10,6 +10,9 @@ import csv
 WASM_FILE_OUTPUT_PATH = "/evmwasmfiles"
 RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
+# how many times to run native exec
+RUST_BENCH_REPEATS = 50
+
 def get_rust_bytes(hex_str):
     tmp = map(''.join, zip(*[iter(hex_str)]*2))
     tmp = map(lambda x: int(x, 16), tmp)
@@ -21,7 +24,7 @@ def bench_rust_binary(rustdir, input_name, native_exec):
     print("running rust native {}...\n{}".format(input_name, native_exec))
     # TODO: get size of native exe file
     bench_times = []
-    for i in range(1,20):
+    for i in range(1,RUST_BENCH_REPEATS):
         rust_process = subprocess.Popen(native_exec, cwd=rustdir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
         rust_process.wait(None)
         stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
@@ -136,6 +139,7 @@ def do_go_bench(benchname, input):
 
 
 def saveResults(native_benchmarks, evm_benchmarks):
+    # TODO: move existing output files before writing
     native_file = "{}/native_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
     with open(native_file, 'w', newline='') as bench_result_file:
         fieldnames = ['test_name', 'elapsed_times', 'native_file_size']

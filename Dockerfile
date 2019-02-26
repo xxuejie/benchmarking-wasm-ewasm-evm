@@ -45,6 +45,11 @@ RUN cd life && go mod vendor
 RUN cd life && go build
 
 
+# install wagon
+RUN git clone --single-branch --branch bench-times https://github.com/cdetrio/wagon
+RUN cd wagon/cmd/wasm-run && go build
+
+
 # install rust
 RUN curl https://sh.rustup.rs -sSf | \
     sh -s -- --default-toolchain stable -y && . $HOME/.cargo/env
@@ -80,25 +85,28 @@ RUN cd wavm-build && ninja
 # wasmer release 0.1.4 has segmentation violation with rustc 1.32.0. use 1.31.1
 RUN rustup default 1.31.1
 
-# another bug where running wasmer with python `Popen(stderr=subprocess.STDOUT)`
+#  0.1.4 release from December 2018 is faster than atest wasmer master (2019-2-16) 
+RUN git clone --single-branch --branch bench-release https://github.com/cdetrio/wasmer.git
+RUN cd wasmer && cargo build --release
+
+# bug where running wasmer v0.1.4 with python `Popen(stderr=subprocess.STDOUT)`
 # causes an error: `Runtime error: trap at 0x0 - illegal instruction`.
 # the fix is to run Popen without the stderr flag.
 
-# latest wasmer master (2019-2-16) is much slower than 0.1.4 release from December 2018
-#RUN git clone --single-branch --branch bench-compile-time https://github.com/cdetrio/wasmer.git
+RUN rustup default nightly-2019-01-15
+RUN git clone --single-branch --branch bench-compile-time https://github.com/cdetrio/wasmer.git wasmer-master
+RUN cd wasmer-master && cargo build --release
 
-RUN git clone --single-branch --branch bench-release https://github.com/cdetrio/wasmer.git
-RUN cd wasmer && cargo build --release
+
+# install wasmtime
+RUN rustup default nightly-2019-01-15
+RUN git clone --single-branch --branch bench-times https://github.com/cdetrio/wasmtime.git
+RUN cd wasmtime && cargo build --release
 
 
 # install wabt
 RUN git clone --recursive --single-branch --branch bench-times https://github.com/cdetrio/wabt.git
 RUN mkdir wabt/build && cd wabt/build && cmake .. && make
-
-
-# install wagon
-RUN git clone --single-branch --branch bench-times https://github.com/cdetrio/wagon
-RUN cd wagon/cmd/wasm-run && go build
 
 
 # install python modules needed for benchmarking script
@@ -116,7 +124,6 @@ COPY node-timer.js ./node/node-timer.js
 
 # copy benchmarking scripts
 RUN mkdir -p /testresults
-COPY ./wasmfiles /wasmfiles
 COPY ./bencher /bencher
 
 WORKDIR /bencher
