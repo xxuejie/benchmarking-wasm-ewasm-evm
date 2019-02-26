@@ -18,7 +18,7 @@ from project.TestDescriptor import TestDescriptor
 from os.path import join
 
 # launch count of interpreter-based VMs
-interpreter_launches_count = 3
+interpreter_launches_count = 11
 
 # launch count of compiler-based VMs
 compiler_launches_count = 11

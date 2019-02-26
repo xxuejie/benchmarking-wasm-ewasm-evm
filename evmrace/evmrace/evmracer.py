@@ -66,6 +66,7 @@ def do_rust_bench(benchname, input):
     exec_path = "{}/target/release/{}_native".format(filldir, benchname)
     exec_size = os.path.getsize(exec_path)
 
+    # TODO: also build with optimization turned off
     rust_wasm_cmd = "cargo build --release --lib --target wasm32-unknown-unknown"
     print("compiling rust wasm {}...\n{}".format(input['name'], rust_wasm_cmd))
     rust_process = subprocess.Popen(rust_wasm_cmd, cwd=filldir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
@@ -79,6 +80,8 @@ def do_rust_bench(benchname, input):
     if not os.path.exists(wasmdir):
         os.mkdir(wasmdir)
     shutil.copy(wasmbin, wasmoutfile)
+    
+    # TODO: get cargo build compiler time and report along with exec time.
 
     # run rust binary
     native_times = bench_rust_binary(filldir, input['name'], "./target/release/{}_native".format(benchname))
