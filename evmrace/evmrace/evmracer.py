@@ -5,6 +5,7 @@ from functools import reduce
 import subprocess
 import nanodurationpy as durationpy
 import csv
+import os.path
 
 # output paths should be mounted docker volumes
 WASM_FILE_OUTPUT_PATH = "/evmwasmfiles"
@@ -90,21 +91,40 @@ def do_rust_bench(benchname, input):
     native_times = bench_rust_binary(filldir, input['name'], "./target/release/{}_native".format(benchname))
     return { 'bench_times': native_times, 'exec_size': exec_size }
 
-def do_go_bench(benchname, input):
-    #COPY ./sha1_test.go /go-ethereum/core/vm/runtime/sha_test.go
+def get_go_evm_bench(benchname, shift_optimized=False):
     #RUN cd /go-ethereum/core/vm/runtime && go test -bench BenchmarkSHA1 -benchtime 5s
-    destdir = "/go-ethereum/core/vm/runtime/"
-    # first letter must be capitalized or go bench command doesnt work
-    goBenchName = benchname[:1].upper() + benchname[1:]
+    if not shift_optimized:
+        result_name = benchname
+        gofile = "{}_test.go".format(benchname)
+        # BenchmarkSha1
+        goBenchName = benchname[:1].upper() + benchname[1:]
+        # first letter after "Benchmark" must be capitalized or go bench command doesnt work
+    if shift_optimized:
+        result_name = benchname + "-shift-optimized"
+        gofile = "{}_shift_optimized_test.go".format(benchname)
+        # BenchmarkSha1_shift_optimized
+        goBenchName = benchname[:1].upper() + benchname[1:] + "_shift_optimized"
+
+    filepath = "./" + benchname + "/" + gofile
+    if not os.path.isfile(filepath):
+        return False
+
     go_cmd = "go test -bench Benchmark{} -benchtime 5s".format(goBenchName)
-    gofile = "{}_test.go".format(benchname)
+    return {'go_cmd': go_cmd, 'go_bench_file': gofile, 'result_name': result_name}
+
+def do_go_evm_bench(benchname, go_cmd, go_bench_file, input):
+    #COPY ./sha1_test.go /go-ethereum/core/vm/runtime/sha_test.go
+    destdir = "/go-ethereum/core/vm/runtime/"
 
     # fill go template
-    with open("./" + benchname + "/" + gofile) as file_:
+    filepath = "./" + benchname + "/" + go_bench_file
+    with open(go_bench_file) as file_:
         template = jinja2.Template(file_.read())
         filledgo = template.render(input=input['input'], expected=input['expected'])
 
-    gofileout = "{}/{}_filled_test.go".format(os.path.abspath(benchname), benchname)
+    # "sha1_shift_optimized_test.go" -> "sha1_shift_optimized"
+    filled_filename = go_bench_file[:-8]
+    gofileout = "{}/{}_filled_test.go".format(os.path.abspath(benchname), filled_filename)
     with open(gofileout, 'w') as outfile:
         outfile.write(filledgo)
 
@@ -166,15 +186,34 @@ def main():
     for benchname in benchdirs:
         if benchname == "__pycache__":
             continue
+        print("start benching: ", benchname)
         with open("{}/{}-inputs.json".format(benchname, benchname)) as f:
             bench_inputs = json.load(f)
+            go_evm_plain_bench_info = get_go_evm_bench(benchname, shift_optimized=False)
+            go_evm_shift_optimized_info = get_go_evm_bench(benchname, shift_optimized=True)
             for input in bench_inputs:
+                print("bench input:", input)
                 #input['name'], input['input'], input['expected']
-                #do_go_bench(benchname, input)
                 native_input_times = do_rust_bench(benchname, input)
                 native_benchmarks[input['name']] = native_input_times
-                go_evm_times = do_go_bench(benchname, input)
-                evm_benchmarks[input['name']] = go_evm_times
+
+                # do plain test and shift_optimized_test
+                if go_evm_plain_bench_info:
+                    result_name = go_evm_plain_bench_info['result_name']
+                    go_cmd = go_evm_plain_bench_info['go_cmd']
+                    go_bench_file = go_evm_plain_bench_info['go_bench_file']
+                    plain_evm_times = do_go_evm_bench(benchname, go_cmd, go_bench_file, input)
+                    evm_benchmarks[result_name] = plain_evm_times
+                if go_evm_shift_optimized_info:
+                    result_name = go_evm_shift_optimized_info['result_name']
+                    go_cmd = go_evm_shift_optimized_info['go_cmd']
+                    go_bench_file = go_evm_shift_optimized_info['go_bench_file']
+                    shift_optimized_evm_times = do_go_evm_bench(benchname, go_cmd, go_bench_file, input)
+                    evm_benchmarks[result_name] = shift_optimized_evm_times
+
+                print("done with input:", input)
+
+        print("done benching: ", benchname)
 
     print("got native_benchmarks:", native_benchmarks)
     print("got evm_benchmarks:", evm_benchmarks)
