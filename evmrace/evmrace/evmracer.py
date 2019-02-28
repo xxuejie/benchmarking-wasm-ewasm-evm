@@ -117,8 +117,8 @@ def do_go_evm_bench(benchname, go_cmd, go_bench_file, input):
     destdir = "/go-ethereum/core/vm/runtime/"
 
     # fill go template
-    filepath = "./" + benchname + "/" + go_bench_file
-    with open(go_bench_file) as file_:
+    templatepath = "./" + benchname + "/" + go_bench_file
+    with open(templatepath) as file_:
         template = jinja2.Template(file_.read())
         filledgo = template.render(input=input['input'], expected=input['expected'])
 
@@ -192,7 +192,7 @@ def main():
             go_evm_plain_bench_info = get_go_evm_bench(benchname, shift_optimized=False)
             go_evm_shift_optimized_info = get_go_evm_bench(benchname, shift_optimized=True)
             for input in bench_inputs:
-                print("bench input:", input)
+                print("bench input:", input['name'])
                 #input['name'], input['input'], input['expected']
                 native_input_times = do_rust_bench(benchname, input)
                 native_benchmarks[input['name']] = native_input_times
