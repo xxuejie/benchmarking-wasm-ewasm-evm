@@ -4,12 +4,14 @@ import (
 	"strings"
 	"testing"
 	"fmt"
-	
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/params"
 )
 
 
@@ -451,6 +453,17 @@ func BenchmarkBlake2b_shift_optimized(b *testing.B) {
 
 	var cfg = new(Config)
 	setDefaults(cfg)
+	cfg.ChainConfig = &params.ChainConfig{
+		ChainID:        big.NewInt(1),
+		HomesteadBlock: new(big.Int),
+		DAOForkBlock:   new(big.Int),
+		DAOForkSupport: false,
+		EIP150Block:    new(big.Int),
+		EIP155Block:    new(big.Int),
+		EIP158Block:    new(big.Int),
+		ByzantiumBlock:  big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+	}
 	cfg.State, _ = state.New(common.Hash{}, state.NewDatabase(ethdb.NewMemDatabase()))
 
 	var (

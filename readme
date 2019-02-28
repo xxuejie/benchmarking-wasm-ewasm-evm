@@ -9,6 +9,7 @@ $ docker run -it --entrypoint=/bin/bash -v $(pwd)/wasmfiles:/wasmfiles -v $(pwd)
 
 $ PYTHONIOENCODING=UTF-8 python3 ewasm.py
 
+# TODO: use python 3.7 instead of PYTHONIOENCODING
 
 $ cd evmrace
 $ docker build . -t evmrace
