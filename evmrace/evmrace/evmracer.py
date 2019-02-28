@@ -96,8 +96,8 @@ def get_go_evm_bench(benchname, shift_optimized=False):
     if not shift_optimized:
         result_name = benchname
         gofile = "{}_test.go".format(benchname)
-        # BenchmarkSha1
-        goBenchName = benchname[:1].upper() + benchname[1:]
+        # BenchmarkSha1_plain
+        goBenchName = benchname[:1].upper() + benchname[1:] + "_plain"
         # first letter after "Benchmark" must be capitalized or go bench command doesnt work
     if shift_optimized:
         result_name = benchname + "-shift-optimized"
