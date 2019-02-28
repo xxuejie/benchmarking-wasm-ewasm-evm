@@ -109,7 +109,7 @@ def get_go_evm_bench(benchname, shift_optimized=False):
     if not os.path.isfile(filepath):
         return False
 
-    go_cmd = "go test -bench Benchmark{} -benchtime 5s".format(goBenchName)
+    go_cmd = "go test -bench Benchmark{} -benchtime 10s".format(goBenchName)
     return {'go_cmd': go_cmd, 'go_bench_file': gofile, 'result_name': result_name}
 
 def do_go_evm_bench(benchname, go_cmd, go_bench_file, input):
@@ -199,19 +199,21 @@ def main():
 
                 # do plain test and shift_optimized_test
                 if go_evm_plain_bench_info:
-                    result_name = go_evm_plain_bench_info['result_name']
+                    #result_name = go_evm_plain_bench_info['result_name']
+                    result_name = input['name']
                     go_cmd = go_evm_plain_bench_info['go_cmd']
                     go_bench_file = go_evm_plain_bench_info['go_bench_file']
                     plain_evm_times = do_go_evm_bench(benchname, go_cmd, go_bench_file, input)
                     evm_benchmarks[result_name] = plain_evm_times
                 if go_evm_shift_optimized_info:
-                    result_name = go_evm_shift_optimized_info['result_name']
+                    #result_name = go_evm_shift_optimized_info['result_name']
+                    result_name = input['name'] + "-shift-optimized"
                     go_cmd = go_evm_shift_optimized_info['go_cmd']
                     go_bench_file = go_evm_shift_optimized_info['go_bench_file']
                     shift_optimized_evm_times = do_go_evm_bench(benchname, go_cmd, go_bench_file, input)
                     evm_benchmarks[result_name] = shift_optimized_evm_times
 
-                print("done with input:", input)
+                print("done with input:", input['name'])
 
         print("done benching: ", benchname)
 
