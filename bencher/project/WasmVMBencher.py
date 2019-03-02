@@ -13,9 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from project.settings import interpreter_launches_count,\
-    compiler_launches_count
-#   test_export_function_name
 
 from os import listdir
 from os.path import join
@@ -93,26 +90,32 @@ class WasmVMBencher:
                 # if its very short, then do many repetitions
                 # if > 20 seconds or 30 seconds, then do three repetitions
 
+                self.logger.info("<wasm_bencher>: {}".format(cmd))
                 result_record = self.run_engine(vm, cmd)
                 results[vm][test_name].append(result_record)
                 self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
 
-                # target 60 seconds total time per benchmark  
+                # target 60 seconds total time per benchmark
                 repetitions = round(60 / result_record.time)
                 if repetitions < 3:
                   repetitions = 3 # minimum
                 if repetitions > 50:
                   repetitions = 50 # maximum
 
-                for _ in range(repetitions - 1):
-                    result_record = self.run_engine(vm, cmd)
-                    results[vm][test_name].append(result_record)
-                    self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
+                for i in range(repetitions - 1):
+                    self.logger.info("<wasm_bencher> {} run {} of {}: {}".format(vm, i, repetitions, cmd))
+                    try:
+                        result_record = self.run_engine(vm, cmd)
+                        results[vm][test_name].append(result_record)
+                        self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
+                    except Exception as e:
+                        self.logger.info("<wasm_bencher>: {} got exception: {}".format(vm, e))
+                        self.logger.info("<wasm_bencher>: skipping engine {} for bench input {}".format(vm, test_name))
+                        break
 
         return results
 
     def run_engine(self, vm, cmd):
-        self.logger.info("<wasm_bencher>: {}".format(cmd))
         if vm == "lifePolymerase":
             result_record = self.do_life_poly_test(cmd)
         elif vm == "wavm":
@@ -149,7 +152,7 @@ class WasmVMBencher:
 
         """
         start_time = time()
-        Popen(vm_cmd, shell=True).wait(None)
+        Popen(vm_cmd, shell=True, timeout=300).wait(None)
         end_time = time()
         return Record(end_time - start_time)
 
@@ -301,9 +304,9 @@ class WasmVMBencher:
     def doCompilerTest(self, vm_cmd, time_parse_info, stderr_redir=True):
         start_time = time()
         if stderr_redir:
-            vm_process = Popen(vm_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+            vm_process = Popen(vm_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=300, shell=True)
         else:
-            vm_process = Popen(vm_cmd, stdout=subprocess.PIPE, shell=True)
+            vm_process = Popen(vm_cmd, stdout=subprocess.PIPE, timeout=300, shell=True)
         vm_process.wait(None)
         end_time = time()
         total_time = end_time - start_time
