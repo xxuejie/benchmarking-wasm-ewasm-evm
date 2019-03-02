@@ -96,8 +96,8 @@ class WasmVMBencher:
                 # if its very short, then do many repetitions
                 # if > 20 seconds or 30 seconds, then do three repetitions
 
-                first_record = run_engine(vm, cmd)
-                results[vm][test_name].append(result_record)
+                first_record = self.run_engine(vm, cmd)
+                results[vm][test_name].append(first_record)
 
                 # target 60 seconds total time per benchmark  
                 repetitions = round(60 / first_record.time)
@@ -106,14 +106,14 @@ class WasmVMBencher:
                 if repetitions > 50:
                   repetitions = 50 # maximum
 
-                for _ in range(repetitions):
-                    result_record = run_engine(vm, cmd)
+                for _ in range(repetitions - 1):
+                    result_record = self.run_engine(vm, cmd)
                     results[vm][test_name].append(result_record)
                     logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
 
         return results
 
-    def run_engine(vm, cmd):
+    def run_engine(self, vm, cmd):
         logger.info("<wasm_bencher>: {}".format(cmd))
         if vm == "lifePolymerase":
             result_record = self.do_life_poly_test(cmd)
