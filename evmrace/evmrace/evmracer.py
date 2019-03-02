@@ -46,7 +46,8 @@ def do_rust_bench(benchname, input):
     shutil.copytree(rustsrc, filldir)
 
     # only fill template if input['input'] not None
-    if input['input'] not None:
+    if input['input'] is not None:
+      print("filling template for {}".format(input['name']))
       input_len = int(len(input['input']) / 2)
       input_str = "let input: [u8; {}] = {};".format(input_len, get_rust_bytes(input['input']))
       expected_len = int(len(input['expected']) / 2)
@@ -72,6 +73,8 @@ def do_rust_bench(benchname, input):
     exec_size = os.path.getsize(exec_path)
 
     # TODO: also build with optimization turned off
+
+    # TODO: run wasm through wasm-gc
     rust_wasm_cmd = "cargo build --release --lib --target wasm32-unknown-unknown"
     print("compiling rust wasm {}...\n{}".format(input['name'], rust_wasm_cmd))
     rust_process = subprocess.Popen(rust_wasm_cmd, cwd=filldir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
