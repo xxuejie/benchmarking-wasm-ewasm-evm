@@ -103,12 +103,13 @@ class WasmVMBencher:
                   repetitions = 50 # maximum
 
                 for i in range(repetitions - 1):
-                    self.logger.info("<wasm_bencher> {} run {} of {}: {}".format(vm, i, repetitions, cmd))
+                    # run (i+2) of repetitions. 2nd run of 1-based index
+                    self.logger.info("<wasm_bencher> {} run {} of {}: {}".format(vm, i + 2, repetitions, cmd))
                     try:
                         result_record = self.run_engine(vm, cmd)
                         results[vm][test_name].append(result_record)
                         self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
-                    except Exception as e:
+                    except subprocess.TimeoutExpired as e:
                         self.logger.info("<wasm_bencher>: {} got exception: {}".format(vm, e))
                         self.logger.info("<wasm_bencher>: skipping engine {} for bench input {}".format(vm, test_name))
                         break
@@ -152,7 +153,7 @@ class WasmVMBencher:
 
         """
         start_time = time()
-        Popen(vm_cmd, shell=True, timeout=300).wait(None)
+        Popen(vm_cmd, shell=True).wait(300)
         end_time = time()
         return Record(end_time - start_time)
 
@@ -304,10 +305,10 @@ class WasmVMBencher:
     def doCompilerTest(self, vm_cmd, time_parse_info, stderr_redir=True):
         start_time = time()
         if stderr_redir:
-            vm_process = Popen(vm_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=300, shell=True)
+            vm_process = Popen(vm_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
         else:
-            vm_process = Popen(vm_cmd, stdout=subprocess.PIPE, timeout=300, shell=True)
-        vm_process.wait(None)
+            vm_process = Popen(vm_cmd, stdout=subprocess.PIPE, shell=True)
+        vm_process.wait(300)
         end_time = time()
         total_time = end_time - start_time
         stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
