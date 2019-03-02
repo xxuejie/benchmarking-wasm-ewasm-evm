@@ -61,7 +61,7 @@ def do_rust_bench(benchname, input):
             template_args[key] = input[key]
 
     # fill template if necessary
-    if len(template_vars.keys()) > 1:
+    if len(template_args.keys()) > 1:
         print("filling template for {}".format(input['name']))
         with open(rusttemplate) as file_:
             template = jinja2.Template(file_.read())
@@ -83,6 +83,7 @@ def do_rust_bench(benchname, input):
     exec_path = "{}/target/release/{}_native".format(filldir, benchname_rust)
     exec_size = os.path.getsize(exec_path)
 
+    # TODO: get rustc compile time
     # TODO: also build with optimization turned off
 
     # TODO: run wasm through wasm-gc
@@ -208,11 +209,6 @@ def main():
             go_evm_shift_optimized_info = get_go_evm_bench(benchname, shift_optimized=True)
             for input in bench_inputs:
                 print("bench input:", input['name'])
-                #input['name'], input['input'], input['expected']
-                if 'input' not in input:
-                  # for ed25519, no need to fill template
-                  input['input'] = None
-
                 native_input_times = do_rust_bench(benchname, input)
                 native_benchmarks[input['name']] = native_input_times
 

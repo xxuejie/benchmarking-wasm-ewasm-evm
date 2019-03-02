@@ -3,10 +3,10 @@ extern crate bls_aggregates;
 // code from https://github.com/sigp/signature-schemes/blob/f0c2d64b80e0294a0353a924fe8b7d473f62ce29/benches/bls381_benches.rs#L99-L127
 
 // for generating input data
-use bls_aggregates::{AggregatePublicKey, AggregateSignature, Keypair, Signature};
+//use bls_aggregates::{AggregatePublicKey, AggregateSignature, Keypair, Signature};
 
 // for running the benchmark
-//use bls_aggregates::{AggregatePublicKey, AggregateSignature, PublicKey};
+use bls_aggregates::{AggregatePublicKey, AggregateSignature, PublicKey};
 
 pub fn bench() {
 
