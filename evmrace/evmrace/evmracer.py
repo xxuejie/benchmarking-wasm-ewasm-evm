@@ -23,7 +23,6 @@ def get_rust_bytes(hex_str):
 
 def bench_rust_binary(rustdir, input_name, native_exec):
     print("running rust native {}...\n{}".format(input_name, native_exec))
-    # TODO: get size of native exe file
     bench_times = []
     for i in range(1,RUST_BENCH_REPEATS):
         rust_process = subprocess.Popen(native_exec, cwd=rustdir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
@@ -46,18 +45,20 @@ def do_rust_bench(benchname, input):
         shutil.rmtree(filldir)
     shutil.copytree(rustsrc, filldir)
 
-    input_len = int(len(input['input']) / 2)
-    input_str = "let input: [u8; {}] = {};".format(input_len, get_rust_bytes(input['input']))
-    expected_len = int(len(input['expected']) / 2)
-    expected_str = "let expected: [u8; {}] = {};".format(expected_len, get_rust_bytes(input['expected']))
+    # only fill template if input['input'] not None
+    if input['input'] not None:
+      input_len = int(len(input['input']) / 2)
+      input_str = "let input: [u8; {}] = {};".format(input_len, get_rust_bytes(input['input']))
+      expected_len = int(len(input['expected']) / 2)
+      expected_str = "let expected: [u8; {}] = {};".format(expected_len, get_rust_bytes(input['expected']))
 
-    with open(rusttemplate) as file_:
-        template = jinja2.Template(file_.read())
-        filledrust = template.render(input=input_str, expected=expected_str)
+      with open(rusttemplate) as file_:
+          template = jinja2.Template(file_.read())
+          filledrust = template.render(input=input_str, expected=expected_str)
 
-    rustfileout = "{}/src/bench.rs".format(filldir)
-    with open(rustfileout, 'w') as outfile:
-        outfile.write(filledrust)
+      rustfileout = "{}/src/bench.rs".format(filldir)
+      with open(rustfileout, 'w') as outfile:
+          outfile.write(filledrust)
 
     # compile rust code
     rust_native_cmd = "cargo build --release --bin {}_native".format(benchname)
@@ -84,7 +85,7 @@ def do_rust_bench(benchname, input):
     if not os.path.exists(wasmdir):
         os.mkdir(wasmdir)
     shutil.copy(wasmbin, wasmoutfile)
-    
+
     # TODO: get cargo build compiler time and report along with exec time.
 
     # run rust binary
@@ -194,6 +195,10 @@ def main():
             for input in bench_inputs:
                 print("bench input:", input['name'])
                 #input['name'], input['input'], input['expected']
+                if 'input' not in input:
+                  # for ed25519, no need to fill template
+                  input['input'] = None
+
                 native_input_times = do_rust_bench(benchname, input)
                 native_benchmarks[input['name']] = native_input_times
 
