@@ -3,14 +3,16 @@ extern crate bls_aggregates;
 // code from https://github.com/sigp/signature-schemes/blob/f0c2d64b80e0294a0353a924fe8b7d473f62ce29/benches/bls381_benches.rs#L99-L127
 
 // for generating input data
-//use bls_aggregates::{AggregatePublicKey, AggregateSignature, Keypair, Signature};
+use bls_aggregates::{AggregatePublicKey, AggregateSignature, Keypair, Signature};
 
 // for running the benchmark
-use bls_aggregates::{AggregatePublicKey, AggregateSignature, PublicKey};
+//use bls_aggregates::{AggregatePublicKey, AggregateSignature, PublicKey};
 
 pub fn bench() {
-    /*  *** uncomment this to generate the input data agg_sig_bytes and PUB_KEYS
-    let n = 128;
+
+    /*
+    //  *** uncomment this to generate the input data agg_sig_bytes and PUB_KEYS
+    let n = 32;
     let mut pubkeys = vec![];
     let mut agg_sig = AggregateSignature::new();
     let msg = b"signed message";
@@ -31,9 +33,8 @@ pub fn bench() {
     }
     */
 
-    let msg = b"signed message";
-    let domain = 0;
 
+    /*
     let agg_sig_bytes: [u8; 96] = [16u8, 107u8, 215u8, 228u8, 111u8, 21u8, 58u8, 235u8, 100u8, 229u8, 223u8, 5u8, 31u8, 141u8, 77u8, 0u8, 132u8, 185u8, 247u8, 215u8, 84u8, 163u8, 161u8, 39u8, 138u8, 14u8, 67u8, 176u8, 153u8, 201u8, 145u8, 112u8, 246u8, 199u8, 248u8, 20u8, 249u8, 237u8, 199u8, 50u8, 164u8, 121u8, 182u8, 239u8, 193u8, 177u8, 115u8, 125u8, 25u8, 208u8, 161u8, 10u8, 24u8, 32u8, 105u8, 185u8, 222u8, 11u8, 40u8, 230u8, 202u8, 81u8, 65u8, 23u8, 39u8, 20u8, 67u8, 185u8, 78u8, 40u8, 229u8, 207u8, 9u8, 232u8, 92u8, 8u8, 234u8, 238u8, 24u8, 180u8, 31u8, 103u8, 42u8, 69u8, 23u8, 142u8, 100u8, 169u8, 80u8, 58u8, 171u8, 243u8, 170u8, 30u8, 94u8, 197u8];
 
     static PUB_KEYS: [[u8; 48]; 128]  = [
@@ -166,6 +167,15 @@ pub fn bench() {
       [140u8, 3u8, 100u8, 167u8, 173u8, 89u8, 164u8, 129u8, 102u8, 38u8, 175u8, 187u8, 176u8, 158u8, 100u8, 67u8, 203u8, 240u8, 197u8, 80u8, 79u8, 252u8, 142u8, 174u8, 157u8, 155u8, 51u8, 168u8, 178u8, 146u8, 44u8, 182u8, 121u8, 134u8, 158u8, 89u8, 75u8, 186u8, 240u8, 211u8, 107u8, 55u8, 210u8, 129u8, 178u8, 136u8, 131u8, 155u8],
       [25u8, 105u8, 95u8, 129u8, 121u8, 11u8, 117u8, 218u8, 115u8, 20u8, 89u8, 197u8, 79u8, 89u8, 204u8, 244u8, 86u8, 164u8, 117u8, 110u8, 240u8, 145u8, 213u8, 88u8, 146u8, 137u8, 82u8, 152u8, 247u8, 87u8, 237u8, 71u8, 22u8, 198u8, 174u8, 160u8, 39u8, 22u8, 207u8, 254u8, 50u8, 72u8, 185u8, 68u8, 89u8, 235u8, 87u8, 199u8]
     ];
+    */
+
+
+    {{agg_sig_bytes}}
+    
+    {{pubkeys}}
+
+    let msg = b"signed message";
+    let domain = 0;
 
     let mut pubkeys = vec![];
     for i in 0..PUB_KEYS.len() {

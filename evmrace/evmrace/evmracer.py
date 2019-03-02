@@ -45,21 +45,31 @@ def do_rust_bench(benchname, input):
         shutil.rmtree(filldir)
     shutil.copytree(rustsrc, filldir)
 
-    # only fill template if input['input'] not None
-    if input['input'] is not None:
-      print("filling template for {}".format(input['name']))
-      input_len = int(len(input['input']) / 2)
-      input_str = "let input: [u8; {}] = {};".format(input_len, get_rust_bytes(input['input']))
-      expected_len = int(len(input['expected']) / 2)
-      expected_str = "let expected: [u8; {}] = {};".format(expected_len, get_rust_bytes(input['expected']))
+    template_args = {}
+    for key in input.keys():
+        if key == "name":
+            continue
+        if key == "input":
+            input_len = int(len(input['input']) / 2)
+            input_str = "let input: [u8; {}] = {};".format(input_len, get_rust_bytes(input['input']))
+            template_args["input"] = input_str
+        elif key == "expected":
+            expected_len = int(len(input['expected']) / 2)
+            expected_str = "let expected: [u8; {}] = {};".format(expected_len, get_rust_bytes(input['expected']))
+            template_args["expected"] = expected_str
+        else:
+            template_args[key] = input[key]
 
-      with open(rusttemplate) as file_:
-          template = jinja2.Template(file_.read())
-          filledrust = template.render(input=input_str, expected=expected_str)
+    # fill template if necessary
+    if len(template_vars.keys()) > 1:
+        print("filling template for {}".format(input['name']))
+        with open(rusttemplate) as file_:
+            template = jinja2.Template(file_.read())
+            filledrust = template.render(**template_args)
 
-      rustfileout = "{}/src/bench.rs".format(filldir)
-      with open(rustfileout, 'w') as outfile:
-          outfile.write(filledrust)
+        rustfileout = "{}/src/bench.rs".format(filldir)
+        with open(rustfileout, 'w') as outfile:
+            outfile.write(filledrust)
 
     # compile rust code
     benchname_rust = benchname.replace("-", "_")
