@@ -89,11 +89,15 @@ class WasmVMBencher:
                 # determine repititions for a benchmark by checking the time it takes for one run
                 # if its very short, then do many repetitions
                 # if > 20 seconds or 30 seconds, then do three repetitions
-
-                self.logger.info("<wasm_bencher>: {}".format(cmd))
-                result_record = self.run_engine(vm, cmd)
-                results[vm][test_name].append(result_record)
-                self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
+                try:
+                    self.logger.info("<wasm_bencher>: {}".format(cmd))
+                    result_record = self.run_engine(vm, cmd)
+                    results[vm][test_name].append(result_record)
+                    self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
+                except subprocess.TimeoutExpired as e:
+                    self.logger.info("<wasm_bencher>: {} got exception: {}".format(vm, e))
+                    self.logger.info("<wasm_bencher>: skipping engine {} for bench input {}".format(vm, test_name))
+                    continue
 
                 # target 60 seconds total time per benchmark
                 repetitions = round(60 / result_record.time)
@@ -105,14 +109,10 @@ class WasmVMBencher:
                 for i in range(repetitions - 1):
                     # run (i+2) of repetitions. 2nd run of 1-based index
                     self.logger.info("<wasm_bencher> {} run {} of {}: {}".format(vm, i + 2, repetitions, cmd))
-                    try:
-                        result_record = self.run_engine(vm, cmd)
-                        results[vm][test_name].append(result_record)
-                        self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
-                    except subprocess.TimeoutExpired as e:
-                        self.logger.info("<wasm_bencher>: {} got exception: {}".format(vm, e))
-                        self.logger.info("<wasm_bencher>: skipping engine {} for bench input {}".format(vm, test_name))
-                        break
+                    result_record = self.run_engine(vm, cmd)
+                    results[vm][test_name].append(result_record)
+                    self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
+
 
         return results
 
