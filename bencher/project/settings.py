@@ -58,7 +58,7 @@ vm_descriptors = {
 
     "wasmtime": VMDescriptor("/engines/wasmtime/target/release/wasmtime", "{wasm_file_path} --invoke=main", True),
 
-    "wasmer" : VMDescriptor("/engines/wasmer/target/release/wasmer", "run {wasm_file_path}", True),
+    # "wasmer" : VMDescriptor("/engines/wasmer/target/release/wasmer", "run {wasm_file_path}", True),
 
     "wavm"   : VMDescriptor("/engines/wavm-build/bin/wavm-run", "{wasm_file_path} -f {function_name}", True),
 

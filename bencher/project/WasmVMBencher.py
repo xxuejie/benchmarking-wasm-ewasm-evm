@@ -90,32 +90,51 @@ class WasmVMBencher:
                       + vm_descriptors[vm].vm_launch_cmd.format(wasm_file_path=test_path,
                                                                 function_name=test_export_function_name)
 
-                launch_count = compiler_launches_count if vm_descriptors[vm].is_compiler_type \
-                    else interpreter_launches_count
-                for _ in range(launch_count):
-                    logger.info("<wasm_bencher>: {}".format(cmd))
-                    if vm == "lifePolymerase":
-                        result_record = self.do_life_poly_test(cmd)
-                    elif vm == "wavm":
-                        result_record = self.do_wavm_test(cmd)
-                    elif vm == "wasmer":
-                        result_record = self.do_wasmer_test(cmd)
-                    elif vm == "wasmtime":
-                        result_record = self.do_wasmtime_test(cmd)
-                    elif vm == "v8-liftoff" or vm == "v8-turbofan" or vm == "v8-interpreter":
-                        result_record = self.do_v8_test(cmd)
-                    elif vm == "wagon":
-                        result_record = self.do_wagon_test(cmd)
-                    elif vm == "wasmi":
-                        result_record = self.do_wasmi_test(cmd)
-                    elif vm == "wabt":
-                        result_record = self.do_wabt_test(cmd)
-                    else:
-                        result_record = self.__do_one_test(cmd)
+                #launch_count = compiler_launches_count if vm_descriptors[vm].is_compiler_type \
+                #    else interpreter_launches_count
+                # TODO: determine launch_count of an engine by checking the time it takes for one run of a benchmark
+                # if its very short, then do many repetitions
+                # if > 20 seconds or 30 seconds, then do three repetitions
+
+                first_record = run_engine(vm, cmd)
+                results[vm][test_name].append(result_record)
+
+                # target 60 seconds total time per benchmark  
+                repetitions = round(60 / first_record.time)
+                if repetitions < 3:
+                  repetitions = 3 # minimum
+                if repetitions > 50:
+                  repetitions = 50 # maximum
+
+                for _ in range(repetitions):
+                    result_record = run_engine(vm, cmd)
                     results[vm][test_name].append(result_record)
                     logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
 
         return results
+
+    def run_engine(vm, cmd):
+        logger.info("<wasm_bencher>: {}".format(cmd))
+        if vm == "lifePolymerase":
+            result_record = self.do_life_poly_test(cmd)
+        elif vm == "wavm":
+            result_record = self.do_wavm_test(cmd)
+        elif vm == "wasmer":
+            result_record = self.do_wasmer_test(cmd)
+        elif vm == "wasmtime":
+            result_record = self.do_wasmtime_test(cmd)
+        elif vm == "v8-liftoff" or vm == "v8-turbofan" or vm == "v8-interpreter":
+            result_record = self.do_v8_test(cmd)
+        elif vm == "wagon":
+            result_record = self.do_wagon_test(cmd)
+        elif vm == "wasmi":
+            result_record = self.do_wasmi_test(cmd)
+        elif vm == "wabt":
+            result_record = self.do_wabt_test(cmd)
+        else:
+            result_record = self.__do_one_test(cmd)
+
+        return result_record
 
     def __do_one_test(self, vm_cmd):
         """Launches provided shell command string via subprocess.Popen and measure its execution time.

@@ -62,14 +62,15 @@ def do_rust_bench(benchname, input):
           outfile.write(filledrust)
 
     # compile rust code
-    rust_native_cmd = "cargo build --release --bin {}_native".format(benchname)
+    benchname_rust = benchname.replace("-", "_")
+    rust_native_cmd = "cargo build --release --bin {}_native".format(benchname_rust)
     print("compiling rust native {}...\n{}".format(input['name'], rust_native_cmd))
     rust_process = subprocess.Popen(rust_native_cmd, cwd=filldir, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
     rust_process.wait(None)
     stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
     print(("").join(stdoutlines), end="")
     # native binary is at ./target/release/sha1_native
-    exec_path = "{}/target/release/{}_native".format(filldir, benchname)
+    exec_path = "{}/target/release/{}_native".format(filldir, benchname_rust)
     exec_size = os.path.getsize(exec_path)
 
     # TODO: also build with optimization turned off
@@ -82,7 +83,7 @@ def do_rust_bench(benchname, input):
     stdoutlines = [str(line, 'utf8') for line in rust_process.stdout]
     print(("").join(stdoutlines), end="")
     # wasm is at ./target/wasm32-unknown-unkown/release/sha1_wasm.wasm
-    wasmbin = "{}/target/wasm32-unknown-unknown/release/{}_wasm.wasm".format(filldir, benchname)
+    wasmbin = "{}/target/wasm32-unknown-unknown/release/{}_wasm.wasm".format(filldir, benchname_rust)
     wasmdir = os.path.abspath(WASM_FILE_OUTPUT_PATH)
     wasmoutfile = "{}/{}.wasm".format(wasmdir, input['name'])
     if not os.path.exists(wasmdir):
@@ -92,7 +93,7 @@ def do_rust_bench(benchname, input):
     # TODO: get cargo build compiler time and report along with exec time.
 
     # run rust binary
-    native_times = bench_rust_binary(filldir, input['name'], "./target/release/{}_native".format(benchname))
+    native_times = bench_rust_binary(filldir, input['name'], "./target/release/{}_native".format(benchname_rust))
     return { 'bench_times': native_times, 'exec_size': exec_size }
 
 def get_go_evm_bench(benchname, shift_optimized=False):
