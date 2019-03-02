@@ -54,6 +54,7 @@ class WasmVMBencher:
         #self.enabled_vm = listdir(vm_dir)
         #self.enabled_vm = ['wavm', 'wasmer', 'wasmi', 'life', 'wagon']
         self.enabled_vm = []
+        self.logger = logging.getLogger("wasm_bencher_logger")
 
     def run_tests(self, test_descriptors, vm_descriptors):
         """Launches provided tests and returns their execution time.
@@ -73,14 +74,12 @@ class WasmVMBencher:
        """
         # {vm : {test_name : [Records]}}
         results = defaultdict(lambda: defaultdict(list))
-        logger = logging.getLogger("wasm_bencher_logger")
 
         test_export_function_name = 'main'
         self.enabled_vm = list(vm_descriptors.keys())
 
-
         for test_name, test_path in test_descriptors.items():
-            logger.info("<wasm_bencher>: launch {} test".format(test_name))
+            self.logger.info("<wasm_bencher>: launch {} test".format(test_name))
             for vm in self.enabled_vm:
                 if vm not in vm_descriptors:
                     continue
@@ -90,17 +89,16 @@ class WasmVMBencher:
                       + vm_descriptors[vm].vm_launch_cmd.format(wasm_file_path=test_path,
                                                                 function_name=test_export_function_name)
 
-                #launch_count = compiler_launches_count if vm_descriptors[vm].is_compiler_type \
-                #    else interpreter_launches_count
-                # TODO: determine launch_count of an engine by checking the time it takes for one run of a benchmark
+                # determine repititions for a benchmark by checking the time it takes for one run
                 # if its very short, then do many repetitions
                 # if > 20 seconds or 30 seconds, then do three repetitions
 
-                first_record = self.run_engine(vm, cmd)
-                results[vm][test_name].append(first_record)
+                result_record = self.run_engine(vm, cmd)
+                results[vm][test_name].append(result_record)
+                self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
 
                 # target 60 seconds total time per benchmark  
-                repetitions = round(60 / first_record.time)
+                repetitions = round(60 / result_record.time)
                 if repetitions < 3:
                   repetitions = 3 # minimum
                 if repetitions > 50:
@@ -109,12 +107,12 @@ class WasmVMBencher:
                 for _ in range(repetitions - 1):
                     result_record = self.run_engine(vm, cmd)
                     results[vm][test_name].append(result_record)
-                    logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
+                    self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
 
         return results
 
     def run_engine(self, vm, cmd):
-        logger.info("<wasm_bencher>: {}".format(cmd))
+        self.logger.info("<wasm_bencher>: {}".format(cmd))
         if vm == "lifePolymerase":
             result_record = self.do_life_poly_test(cmd)
         elif vm == "wavm":
@@ -318,8 +316,4 @@ class WasmVMBencher:
         exec_match = re.search(time_parse_info['exec_regex'], exec_line)
         exec_time = durationpy.from_str(exec_match[1])
         return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=exec_time.total_seconds())
-
-
-
-
 
