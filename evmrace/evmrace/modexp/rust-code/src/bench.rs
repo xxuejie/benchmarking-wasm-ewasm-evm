@@ -24,7 +24,6 @@ fn calculate_cost(lm: usize, lb: usize, exp: &BigInt) -> u64 {
             if exp.is_zero() {
                 0u64
             } else {
-                // Number of bits == ⌊log2()⌋ + 1
                 exp.bits() as u64 - 1
             }
         }
