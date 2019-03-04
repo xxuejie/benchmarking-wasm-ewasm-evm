@@ -187,18 +187,12 @@ class WasmVMBencher:
 
     def do_wavm_test(self, vm_cmd):
         """02/16/2019 12:03:32 AM <wasm_bencher>: /engines/wavm-build/bin/wavm-run /wasmfiles/example.wasm -f main
-           Object size: 3752                                                                                                                                                                                                                    │··············
-           Object size: 808                                                                                                                                                                                                                     │··············
-           Runtime exception: wavm.outOfBoundsMemoryAccess(+1684107116)                                                                                                                                                                         │··············
-           Call stack:                                                                                                                                                                                                                          │··············
-              wasm!/wasmfiles/guido-fuzzer-find-2-norotates.wasm!oldmain+5                                                                                                                                                                       │··············
-              wasm!/wasmfiles/guido-fuzzer-find-2-norotates.wasm!main+5                                                                                                                                                                          │··············
-              thnk!C to WASM thunk!()->i32+0
-              ....
-           Instantiation/compile time: 1654661us
-           Invoke/run time: 48594us
+           Object size: 600392                                                                                                                                                                                                                  │··············
+           Object size: 800                                                                                                                                                                                                                     │··············
+           Instantiation/compile time: 4210686us                                                                                                                                                                                                │··············
+           Invoke/run time: 113563us
         """
-        # TODO: read file size
+        # TODO: read wavm compiled object size
         time_parse_info = {
           'compile_line_num' : -2,
           'exec_line_num' : -1,
