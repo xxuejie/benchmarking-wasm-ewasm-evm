@@ -18,11 +18,12 @@ from os import listdir
 from os.path import join
 from time import time
 import subprocess
-from subprocess import Popen
+#from subprocess import Popen
 from collections import defaultdict
 import logging
 import durationpy
 import re
+import shlex
 
 
 class Record:
@@ -134,28 +135,9 @@ class WasmVMBencher:
         elif vm == "wabt":
             result_record = self.do_wabt_test(cmd)
         else:
-            result_record = self.__do_one_test(cmd)
+            result_record = self.doElapsedTest(cmd)
 
         return result_record
-
-    def __do_one_test(self, vm_cmd):
-        """Launches provided shell command string via subprocess.Popen and measure its execution time.
-
-        Parameters
-        ----------
-        vm_cmd : str
-            An exactly command that should be executed.
-
-        Returns
-        -------
-        time_type
-            An elapsed time of provided cmd execution.
-
-        """
-        start_time = time()
-        Popen(vm_cmd, shell=True).wait(300)
-        end_time = time()
-        return Record(end_time - start_time)
 
     def do_wasmtime_test(self, vm_cmd):
         """
@@ -302,17 +284,43 @@ class WasmVMBencher:
         }
         return self.doCompilerTest(vm_cmd, time_parse_info)
 
+    def doElapsedTest(self, vm_cmd):
+        """Launches provided shell command string via subprocess.Popen and measure its execution time.
+
+        Parameters
+        ----------
+        vm_cmd : str
+            An exactly command that should be executed.
+
+        Returns
+        -------
+        time_type
+            An elapsed time of provided cmd execution.
+
+        """
+        start_time = time()
+        #Popen(vm_cmd, shell=True).wait(300)
+        cmd_args = shlex.split(vm_cmd)
+        vm_process = subprocess.run(cmd_args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=300)
+        end_time = time()
+        #stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
+        stdoutlines = [line for line in vm_process.stdout.decode('utf8').rstrip().split('\n')]
+        print(("\n").join(stdoutlines), end="\n")
+        return Record(end_time - start_time)
+
     def doCompilerTest(self, vm_cmd, time_parse_info, stderr_redir=True):
         start_time = time()
+        cmd_args = shlex.split(vm_cmd)
         if stderr_redir:
-            vm_process = Popen(vm_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+            vm_process = subprocess.run(cmd_args, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, timeout=300)
         else:
-            vm_process = Popen(vm_cmd, stdout=subprocess.PIPE, shell=True)
-        vm_process.wait(300)
+            vm_process = subprocess.run(cmd_args, stdout=subprocess.PIPE, shell=True, timeout=300)
+        #vm_process.wait(300)
         end_time = time()
         total_time = end_time - start_time
-        stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
-        print(("").join(stdoutlines), end="")
+        #stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
+        stdoutlines = [line for line in vm_process.stdout.decode('utf8').rstrip().split('\n')]
+        print(("\n").join(stdoutlines), end="\n")
         compile_line = stdoutlines[time_parse_info['compile_line_num']]
         compile_match = re.search(time_parse_info['compile_regex'], compile_line)
         compile_time = durationpy.from_str(compile_match[1])
