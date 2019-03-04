@@ -1,11 +1,15 @@
 #!/usr/bin/python
 
-import jinja2, json, re, os, shutil
+import jinja2, json, re
 from functools import reduce
 import subprocess
 import nanodurationpy as durationpy
 import csv
-import os.path
+import time
+import datetime
+import os
+import shutil
+import glob
 
 # output paths should be mounted docker volumes
 WASM_FILE_OUTPUT_PATH = "/evmwasmfiles"
@@ -175,7 +179,17 @@ def do_go_evm_bench(benchname, go_cmd, go_bench_file, input):
 
 
 def saveResults(native_benchmarks, evm_benchmarks):
-    # TODO: move existing output files before writing
+    # move existing files to old-datetime-folder
+    ts = time.time()
+    date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+    ts_folder_name = "{}-{}".format(date_str, round(ts))
+    dest_backup_path = os.path.join(RESULT_CSV_OUTPUT_PATH, ts_folder_name)
+    os.makedirs(dest_backup_path)
+    for file in glob.glob(r"{}/*.csv".format(RESULT_CSV_OUTPUT_PATH)):
+        print("backing up existing {}".format(file))
+        shutil.move(file, dest_backup_path)
+    print("existing csv files backed up to {}".format(dest_backup_path))
+
     native_file = "{}/native_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
     with open(native_file, 'w', newline='') as bench_result_file:
         fieldnames = ['test_name', 'elapsed_times', 'native_file_size']

@@ -10,6 +10,12 @@ import csv
 import logging
 import sys
 import os
+import time
+import datetime
+import shutil
+import glob
+
+OUT_DIR = "/testresults"
 
 
 WASM_FILE_PATH = '/wasmfiles'
@@ -25,7 +31,17 @@ def getTestDescriptors():
 
 
 def save_test_results(out_dir, results):
-    # TODO: move existing files to old-datetime-folder
+    # move existing files to old-datetime-folder
+    ts = time.time()
+    date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+    ts_folder_name = "{}-{}".format(date_str, round(ts))
+    dest_backup_path = os.path.join(out_dir, ts_folder_name)
+    os.makedirs(dest_backup_path)
+    for file in glob.glob(r"{}/*.csv".format(out_dir)):
+        print("backing up existing {}".format(file))
+        shutil.move(file, dest_backup_path)
+    print("existing csv files backed up to {}".format(dest_backup_path))
+
     for vm in results:
         with open(os.path.join(out_dir, vm + ".csv"), 'w', newline='') as bench_result_file:
             fieldnames = ['test_name', 'elapsed_time', 'compile_time', 'exec_time']
@@ -48,7 +64,7 @@ def main():
     test_results = vm_bencher.run_tests(test_descriptors, vm_descriptors)
     print("ewasm.py test_results:")
     print(test_results)
-    save_test_results("/testresults", test_results)
+    save_test_results(OUT_DIR, test_results)
 
 
 if __name__ == '__main__':
