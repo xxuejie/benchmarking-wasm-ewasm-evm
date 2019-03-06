@@ -178,6 +178,9 @@ def do_go_evm_bench(benchname, go_cmd, go_bench_file, input):
     return {'gasUsed': gasused, 'time': ns_time.total_seconds()}
 
 
+# TODO: run evmone bench
+
+
 def saveResults(native_benchmarks, evm_benchmarks):
     # move existing files to old-datetime-folder
     ts = time.time()
@@ -248,6 +251,9 @@ def main():
 
     print("got native_benchmarks:", native_benchmarks)
     print("got evm_benchmarks:", evm_benchmarks)
+
+    # TODO: run evmone benches
+
     saveResults(native_benchmarks, evm_benchmarks)
 
 if __name__ == "__main__":

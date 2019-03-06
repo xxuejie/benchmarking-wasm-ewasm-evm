@@ -41,6 +41,13 @@ RUN ln -s /root/go/src/github.com/ethereum/go-ethereum /go-ethereum
 #RUN cd /go-ethereum/core/vm/runtime && go test -bench BenchmarkSHA1 -benchtime 5s
 
 
+# install evmone
+RUN git clone --recursive https://github.com/chfast/evmone
+RUN cd evmone && mkdir build
+RUN cd evmone/build && cmake .. -DEVMONE_TESTING=ON
+RUN cd evmone/build && cmake --build . -- -j
+# /root/evmone/build/test/evmone-bench
+
 # install python modules needed for benchmarking script
 RUN pip3 install durationpy jinja2 pandas
 # TODO: alias python to python3
