@@ -1,5 +1,5 @@
 [package]
-name = "ecpairing-bench"
+name = "bn128_mul-bench"
 version = "0.1.0"
 edition = "2018"
 
@@ -11,12 +11,12 @@ parity-bytes = { git = "https://github.com/paritytech/parity-common" }
 wee_alloc = "0.4.2"
 
 [lib]
-name = "ecpairing_wasm"
+name = "bn128_mul_wasm"
 crate-type = ["cdylib"]
 path = "src/lib.rs"
 
 [[bin]]
-name = "ecpairing_native"
+name = "bn128_mul_native"
 path = "src/main.rs"
 
 [profile.release]
