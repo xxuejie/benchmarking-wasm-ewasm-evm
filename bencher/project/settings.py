@@ -31,12 +31,6 @@ test_export_function_name = "main"
     VMDescriptor(vm_relative_binary_path="", vm_launch_cmd="")
 """
 
-# /engines/wavm-build/bin# ./wavm-run -
-# /engines/life# ./life
-# /engines/wasmi/target/debug/examples# ./invoke
-# /engines/wagon/cmd/wasm-run# ./wasm-run
-# /root/.wasmer/bin/wasmer
-
 vm_descriptors = {
     "wagon"  : VMDescriptor("/engines/wagon/cmd/wasm-run/wasm-run", "{wasm_file_path}"),
 
@@ -50,8 +44,6 @@ vm_descriptors = {
 
     "wasmtime": VMDescriptor("/engines/wasmtime/target/release/wasmtime", "{wasm_file_path} --invoke=main"),
 
-    # "wasmer" : VMDescriptor("/engines/wasmer/target/release/wasmer", "run {wasm_file_path}", True),
-
     "wavm"   : VMDescriptor("/engines/wavm-build/bin/wavm-run", "{wasm_file_path} -f {function_name}"),
 
     "lifePolymerase" : VMDescriptor("/engines/life/life", "-polymerase -entry {function_name} {wasm_file_path}"),
@@ -60,8 +52,8 @@ vm_descriptors = {
 
     "wasmi"  : VMDescriptor("/engines/wasmi/target/release/examples/invoke", "{wasm_file_path} {function_name}"),
 
-    # we have binaryen, but calling wasm-shell -e main is not working
+    "asmble" : VMDescriptor("/engines/asmble/bin/asmble", "invoke -in {wasm_file_path} {function_name} -defmaxmempages 20000")
 
-    #"asmble" : VMDescriptor(join("asmble", "bin", "asmble"),
-    #                        "invoke -in {wasm_file_path} {function_name} -defmaxmempages 20000", True)
+    # "wasmer" : VMDescriptor("/engines/wasmer/target/release/wasmer", "run {wasm_file_path}", True),
+    # we have binaryen, but calling wasm-shell -e main is not working
 }

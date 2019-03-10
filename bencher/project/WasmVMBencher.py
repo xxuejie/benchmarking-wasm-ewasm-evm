@@ -49,8 +49,6 @@ class WasmVMBencher:
 
     def __init__(self, vm_dir="/"):
         self.vm_dir = vm_dir
-        #self.enabled_vm = listdir(vm_dir)
-        #self.enabled_vm = ['wavm', 'wasmer', 'wasmi', 'life', 'wagon']
         self.enabled_vm = []
         self.logger = logging.getLogger("wasm_bencher_logger")
 
@@ -201,15 +199,33 @@ class WasmVMBencher:
         }
         return self.doCompilerTest(vm_cmd, time_parse_info)
 
-    def do_life_poly_test(self, vm_cmd):
-        """02/15/2019 03:34:52 PM <wasm_bencher>: /engines/life/life -polymerase -entry main /wasmfiles/ecpairing.wasm
-           [Polymerase] Compilation started.
-           [Polymerase] Compilation finished successfully in 9.683856378s.
-           return value = 0, duration = 46.712798ms
+    def do_life_test(self, vm_cmd):
+        """03/10/2019 05:43:33 AM <wasm_bencher> life run 2 of 12: /engines/life/life -entry main /wasmfiles/bn128_pairing-one_point.wasm
+          disasm time: 150.823183ms
+          compile time: 194.341499ms
+          parse/instantiation time: 348.134957ms
+          return value = 0, exec duration = 4.640145939s
         """
         time_parse_info = {
-          'compile_line_num' : 1,
-          'exec_line_num' : 2,
+          'compile_line_num' : -2,
+          'exec_line_num' : -1,
+          'compile_regex': "parse/instantiation time: ([\w\.]+)",
+          'exec_regex': "duration = ([\w\.]+)"
+        }
+        return self.doCompilerTest(vm_cmd, time_parse_info)
+
+    def do_life_poly_test(self, vm_cmd):
+        """03/10/2019 12:22:31 AM <wasm_bencher>: /engines/life/life -polymerase -entry main /wasmfiles/bn128_pairing-one_point.wasm
+            disasm time: 146.013493ms
+            compile time: 208.066141ms
+            parse/instantiation time: 357.112707ms
+            [Polymerase] Compilation started.
+            [Polymerase] Compilation finished successfully in 45.485905579s.
+            return value = 0, exec duration = 15.903258ms
+        """
+        time_parse_info = {
+          'compile_line_num' : -2,
+          'exec_line_num' : -1,
           'compile_regex': "Compilation finished successfully in ([\w\.]+s).",
           'exec_regex': "duration = ([\w\.]+)"
         }
@@ -249,15 +265,15 @@ class WasmVMBencher:
         return self.doCompilerTest(vm_cmd, time_parse_info)
 
     def do_wagon_test(self, vm_cmd):
-        """02/16/2019 09:56:29 PM <wasm_bencher>: /engines/wagon/cmd/wasm-run/wasm-run /wasmfiles/ecpairing.wasm
-        parse time: 10.763108ms
-        ec_pairing() => wasm-run: running exported functions with input parameters is not supported
-        main() =>
-        memory() => wasm-run: running exported functions with input parameters is not supported
-        exec time: 13.551017849s
+        """03/10/2019 12:14:46 AM <wasm_bencher>: /engines/wagon/cmd/wasm-run/wasm-run /wasmfiles/bn128_pairing-one_point.wasm
+        disasm time: 1.138147961s
+        compile time: 234.159132ms
+        parse time: 1.378798236s
+        <nil> (<nil>)
+        exec time: 3.972499051s
         """
         time_parse_info = {
-          'compile_line_num' : 0,
+          'compile_line_num' : 2,
           'exec_line_num' : -1,
           'compile_regex': "parse time: ([\w\.]+)",
           'exec_regex': "exec time: ([\w\.]+)"

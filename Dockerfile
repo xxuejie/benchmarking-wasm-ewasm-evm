@@ -40,7 +40,7 @@ RUN export GO111MODULE=on
 WORKDIR /engines
 
 # install life
-RUN git clone https://github.com/perlin-network/life
+RUN git clone --single-branch --branch bench-times https://github.com/cdetrio/life
 RUN cd life && go mod vendor
 RUN cd life && go build
 
@@ -121,6 +121,23 @@ RUN cd node && tar -xvf node-v11.10.0-linux-x64.tar.gz -C /usr/local/ --strip-co
 RUN cd node && ln -s /usr/local/bin/node ./node
 COPY node-timer.js ./node/node-timer.js
 
+
+# install java
+ENV JAVA_VER 8
+ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
+
+RUN echo 'deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main' >> /etc/apt/sources.list && \
+    echo 'deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main' >> /etc/apt/sources.list && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys C2518248EEA14886 && \
+    apt-get update && \
+    echo oracle-java${JAVA_VER}-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections && \
+    apt-get install -y --force-yes --no-install-recommends oracle-java${JAVA_VER}-installer oracle-java${JAVA_VER}-set-default && \
+    apt-get clean && \
+    rm -rf /var/cache/oracle-jdk${JAVA_VER}-installer
+
+# install asmble
+RUN wget https://github.com/cdetrio/asmble/releases/download/0.4.2-fl-bench-times/asmble-0.4.2-fl-bench-times.tar
+RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
 
 # copy benchmarking scripts
 RUN mkdir -p /testresults
