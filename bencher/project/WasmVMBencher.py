@@ -47,10 +47,15 @@ class Record:
 class WasmVMBencher:
     """Launches each VM on given directory on each provided test."""
 
-    def __init__(self, vm_dir="/"):
+    def __init__(self, vm_dir="/", error_log="wasm_vm_errors.log"):
         self.vm_dir = vm_dir
         self.enabled_vm = []
         self.logger = logging.getLogger("wasm_bencher_logger")
+        self.error_log = error_log
+
+    def log_error(self, error_msg):
+        self.logger.info(error_msg)
+        print(error_msg, file=open(self.error_log, 'a'))
 
     def run_tests(self, test_descriptors, vm_descriptors):
         """Launches provided tests and returns their execution time.
@@ -93,9 +98,9 @@ class WasmVMBencher:
                     result_record = self.run_engine(vm, cmd)
                     results[vm][test_name].append(result_record)
                     self.logger.info("<wasm_bencher>: {} result collected: time={} compiletime={} exectime={}".format(vm, result_record.time, result_record.compile_time, result_record.exec_time))
-                except subprocess.TimeoutExpired as e:
-                    self.logger.info("<wasm_bencher>: {} got exception: {}".format(vm, e))
-                    self.logger.info("<wasm_bencher>: skipping engine {} for bench input {}".format(vm, test_name))
+                except (subprocess.TimeoutExpired, Exception) as e:
+                    self.log_error("<wasm_bencher>: {} ({}) got exception:\n{}".format(vm, cmd, e))
+                    self.log_error("<wasm_bencher>: skipping engine {} for bench input {}".format(vm, test_name))
                     continue
 
                 # target 60 seconds total time per benchmark
@@ -126,6 +131,8 @@ class WasmVMBencher:
             result_record = self.do_wasmtime_test(cmd)
         elif vm == "v8-liftoff" or vm == "v8-turbofan" or vm == "v8-interpreter":
             result_record = self.do_v8_test(cmd)
+        elif vm == "asmble":
+            result_record = self.do_asmble_test(cmd)
         elif vm == "wagon":
             result_record = self.do_wagon_test(cmd)
         elif vm == "wasmi":
@@ -266,16 +273,27 @@ class WasmVMBencher:
 
     def do_wagon_test(self, vm_cmd):
         """03/10/2019 12:14:46 AM <wasm_bencher>: /engines/wagon/cmd/wasm-run/wasm-run /wasmfiles/bn128_pairing-one_point.wasm
-        disasm time: 1.138147961s
-        compile time: 234.159132ms
         parse time: 1.378798236s
         <nil> (<nil>)
         exec time: 3.972499051s
         """
         time_parse_info = {
-          'compile_line_num' : 2,
+          'compile_line_num' : 0,
           'exec_line_num' : -1,
           'compile_regex': "parse time: ([\w\.]+)",
+          'exec_regex': "exec time: ([\w\.]+)"
+        }
+        return self.doCompilerTest(vm_cmd, time_parse_info)
+
+    def do_asmble_test(self, vm_cmd):
+        """03/11/2019 01:24:20 PM <wasm_bencher> asmble run 2 of 12: /engines/asmble/bin/asmble invoke -in /wasmfiles/bn128_add-cdetrio11.wasm main -defmaxmempages 20000
+        compile time: 4585504732ns
+        exec time: 7276335ns
+        """
+        time_parse_info = {
+          'compile_line_num' : 0,
+          'exec_line_num' : 1,
+          'compile_regex': "compile time: ([\w\.]+)",
           'exec_regex': "exec time: ([\w\.]+)"
         }
         return self.doCompilerTest(vm_cmd, time_parse_info)
@@ -331,11 +349,16 @@ class WasmVMBencher:
         #stdoutlines = [str(line, 'utf8') for line in vm_process.stdout]
         stdoutlines = [line for line in vm_process.stdout.decode('utf8').rstrip().split('\n')]
         print(("\n").join(stdoutlines), end="\n")
-        compile_line = stdoutlines[time_parse_info['compile_line_num']]
-        compile_match = re.search(time_parse_info['compile_regex'], compile_line)
-        compile_time = durationpy.from_str(compile_match[1])
-        exec_line = stdoutlines[time_parse_info['exec_line_num']]
-        exec_match = re.search(time_parse_info['exec_regex'], exec_line)
-        exec_time = durationpy.from_str(exec_match[1])
+        try:
+            compile_line = stdoutlines[time_parse_info['compile_line_num']]
+            compile_match = re.search(time_parse_info['compile_regex'], compile_line)
+            compile_time = durationpy.from_str(compile_match[1])
+            exec_line = stdoutlines[time_parse_info['exec_line_num']]
+            exec_match = re.search(time_parse_info['exec_regex'], exec_line)
+            exec_time = durationpy.from_str(exec_match[1])
+        except Exception as e:
+            error_msg = ["Error parsing engine output. exception: {}".format(e)] + \
+                        ["engine output:"] + stdoutlines
+            raise Exception("\n".join(error_msg))
         return Record(time=total_time, compile_time=compile_time.total_seconds(), exec_time=exec_time.total_seconds())
 
