@@ -7,7 +7,7 @@ $ docker build . -t wasm-engines
 
 $ docker run -it --entrypoint=/bin/bash -v $(pwd)/wasmfiles:/wasmfiles -v $(pwd)/testresults:/testresults --security-opt seccomp=./seccompprofile.json wasm-engines
 
-$ PYTHONIOENCODING=UTF-8 python3 ewasm.py
+$ PYTHONIOENCODING=UTF-8 python3 ewasm.py |& tee wasm-run1.log
 
 # TODO: use python 3.7 instead of PYTHONIOENCODING
 
