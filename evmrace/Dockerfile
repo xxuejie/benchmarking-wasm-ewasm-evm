@@ -54,6 +54,7 @@ RUN pip3 install durationpy jinja2 pandas
 
 RUN mkdir -p /evmraceresults
 COPY ./evmrace /evmrace
+COPY ./meterracer /meterracer
 WORKDIR /evmrace
 
 CMD /bin/bash
