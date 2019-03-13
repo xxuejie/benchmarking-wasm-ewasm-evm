@@ -14,9 +14,7 @@ import prepgocode
 # output paths should be mounted docker volumes
 RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
-RESULT_CSV_FILENAME = "geth_precompile_benchmarks.csv"
-
-#GO_PRECOMPILE_BENCH_CMD = "go test -timeout 900s -bench BenchmarkPrecompiled -benchtime 10s"
+RESULT_CSV_FILENAME = "metering_precompile_benchmarks.csv"
 
 GO_DIR = "/go-ethereum/core/vm/"
 
@@ -119,10 +117,10 @@ ok      github.com/ethereum/go-ethereum/core/vm 155.573s
 
 
 GO_BENCHES = [
-  #'BenchmarkPrecompiledSha256',
+  'BenchmarkPrecompiledSha256',
   'BenchmarkPrecompiledBn256Add',
-  #'BenchmarkPrecompiledBn256ScalarMul',
-  #'BenchmarkPrecompiledBn256Pairing'
+  'BenchmarkPrecompiledBn256ScalarMul',
+  'BenchmarkPrecompiledBn256Pairing',
   # BenchmarkPrecompiledModExp
   # BenchmarkPrecompiledEcrecover
 ]
@@ -149,7 +147,7 @@ EWASM_PRECOMPILE_DEFS = [
     "wasmfile": "ewasm_precompile_ecpairing.wasm.metered",
     "varname": "ewasmEcpairingCode",
     "gofile": "ewasm_precompile_ecpairing.go"
-  },
+  }
 #  {
 #    "wasmfile": "ewasm_precompile_ecrecover.wasm.metered",
 #    "varname": "ewasmEcrecoverCode",
@@ -177,6 +175,7 @@ def prepare_ewasm_go_file(go_bench_name, metered=False):
         wasmfile = wasmfile
     if metered is False:
         wasmfile = precdef['wasmfile'].replace(".metered", "")
+    print("prepared ewasm go file with wasmfile:", wasmfile)
     prepgocode.prepare_go_file(wasmfiledir=WASM_FILE_DIR, wasmfile=wasmfile, varname=varname, gofile=gofile)
     return gofile
 
@@ -194,12 +193,12 @@ def do_go_precompile_bench(go_bench_cmd):
 
     #stdoutlines = [line.decode('utf8') for line in raw_stdoutlines]
     # line.decode('utf8') crashes python.  AttributeError: 'str' object has no attribute 'decode'
-    print("process done.  got stdout:", raw_stdoutlines)
+    print("process finished.")
     return raw_stdoutlines
 
 
 # parsing code from https://github.com/ethereum/benchmarking/blob/master/constantinople/scripts/postprocess_geth_v2.py
-def parse_go_bench_output(stdoutlines):
+def parse_go_bench_output(stdoutlines, ismetered="unmetered"):
     #benchRegex = "Benchmark(Precompiled.*)-Gas=([\d]+)\S+\s+\d+\s+([\d\.]+) ns\/op"
     benchRegex = "Benchmark(Precompiled.*)-Gas=([\d]+)"
     #opRegexp = re.compile("Benchmark(Op.*)\S+\s+\d+\s+([\d\.]+) ns\/op") 
@@ -212,18 +211,28 @@ def parse_go_bench_output(stdoutlines):
     bench_tests = []
     test_name = ""
     gas_used = 0
+    nanosecs = 0
     for line in stdoutlines:
         matchName = re.search(benchRegex, line)
         if matchName:
             test_name = matchName.group(1)
+            nanosecs = 0
+
         matchGas = re.search(gasRegex, line)
         if matchGas:
             gas_used = matchGas.group(1)
-        matchOps = re.search(nsOpRegex, line)
-        if matchOps:
-            nanosecs = matchOps.group(1)
+
+        matchNanos = re.search(nsOpRegex, line)
+        if matchNanos:
+            nanosecs = matchNanos.group(1)
+
+        if int(nanosecs) > 0 and int(gas_used) > 0 and test_name != "":
             bench_time = durationpy.from_str("{}ns".format(nanosecs))
-            bench_tests.append({'name': test_name, 'gas': gas_used, 'time': bench_time.total_seconds()})
+            bench_tests.append({'name': "{}-{}".format(test_name, ismetered), 'gas': gas_used, 'time': bench_time.total_seconds()})
+            print("parsed test result:", bench_tests[-1])
+            gas_used = 0
+            nanosecs = 0
+            test_name = ""
 
     return bench_tests
 
@@ -234,7 +243,7 @@ def saveResults(precompile_benchmarks):
     date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
     ts_folder_name = "backup-{}-{}".format(date_str, round(ts))
     dest_backup_path = os.path.join(RESULT_CSV_OUTPUT_PATH, ts_folder_name)
-    result_file = "{}/{}".format(RESULT_CSV_OUTPUT_PATH, RESULT_CSV_FILENAME)
+    result_file = os.path.join(RESULT_CSV_OUTPUT_PATH, RESULT_CSV_FILENAME)
 
     # back up existing result csv file
     if os.path.isfile(result_file):
@@ -252,27 +261,41 @@ def saveResults(precompile_benchmarks):
 
 def main():
 
+    all_bench_results = []
     for bench_name in GO_BENCHES:
-        go_bench_cmd = "go test -bench {} -benchtime 5s".format(bench_name)
+        bench_name_results = []
+        print("benching unmetered and metered {}".format(bench_name))
+        go_bench_cmd = "go test -timeout 1800s -bench {} -benchtime 2s".format(bench_name)
         # first benchmark unmetered wasm code
+        print("doing unmetered first...")
         gofile = prepare_ewasm_go_file(bench_name, metered=False)
-        gofilepath = os.path.join(WASM_FILE_DIR, gofile)
-        shutil.move(gofilepath, GO_VM_PATH)
+        gofilesrcpath = os.path.join(WASM_FILE_DIR, gofile)
+        gofiledestpath = os.path.join(GO_VM_PATH, gofile)
+        if os.path.isfile(gofiledestpath):
+            os.remove(gofiledestpath)
+        shutil.move(gofilesrcpath, GO_VM_PATH)
         unmetered_bench_output = do_go_precompile_bench(go_bench_cmd)
-        unmetered_bench_results = parse_go_bench_output(unmetered_bench_output)
-        print("got unmetered precompile benchmarks:", unmetered_bench_results)
+        unmetered_bench_results = parse_go_bench_output(unmetered_bench_output, ismetered="unmetered")
+        #print("got unmetered precompile benchmarks:", unmetered_bench_results)
 
         # then benchmark metered wasm code
+        print("now doing metered...")
         gofile = prepare_ewasm_go_file(bench_name, metered=True)
-        gofilepath = os.path.join(WASM_FILE_DIR, gofile)
-        shutil.move(gofilepath, GO_VM_PATH)
-        bench_output = do_go_precompile_bench(go_bench_cmd)
-        bench_results = parse_go_bench_output(bench_output)
-        print("got metered precompile benchmarks:", bench_results)
+        gofilesrcpath = os.path.join(WASM_FILE_DIR, gofile)
+        gofiledestpath = os.path.join(GO_VM_PATH, gofile)
+        if os.path.isfile(gofiledestpath):
+            os.remove(gofiledestpath)
+        shutil.move(gofilesrcpath, GO_VM_PATH)
+        metered_bench_output = do_go_precompile_bench(go_bench_cmd)
+        metered_bench_results = parse_go_bench_output(metered_bench_output, ismetered="metered")
+        #print("got metered precompile benchmarks:", metered_bench_results)
 
-        print("unmetered precompile benchmarks:", unmetered_bench_results)
-    #saveResults(bench_results)
+        bench_name_results = unmetered_bench_results + metered_bench_results
+        #print("bench_name_results:", bench_name_results)
+        all_bench_results.extend(bench_name_results)
 
+    saveResults(all_bench_results)
+    print("all_bench_results:", all_bench_results)
 
 if __name__ == "__main__":
     main()

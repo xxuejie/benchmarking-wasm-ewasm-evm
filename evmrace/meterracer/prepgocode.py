@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import os
+
 header = """// Copyright 2019 The go-ethereum Authors
 // This file is part of the go-ethereum library.
 //
@@ -20,43 +22,11 @@ package vm
 
 """
 
-ewasmDefs = [
-  {
-    "wasmfile": "ewasm_precompile_ecadd.wasm.metered",
-    "varname": "ewasmEcaddCode",
-    "gofile": "ewasm_precompile_ecadd.go"
-  },
-  {
-    "wasmfile": "ewasm_precompile_ecmul.wasm.metered",
-    "varname": "ewasmEcmulCode",
-    "gofile": "ewasm_precompile_ecmul.go"
-  },
-  {
-    "wasmfile": "ewasm_precompile_ecpairing.wasm.metered",
-    "varname": "ewasmEcpairingCode",
-    "gofile": "ewasm_precompile_ecpairing.go"
-  },
-  {
-    "wasmfile": "ewasm_precompile_sha256.wasm.metered",
-    "varname": "ewasmSha256HashCode",
-    "gofile": "ewasm_precompile_sha256.go"
-  },
-#  {
-#    "wasmfile": "ewasm_precompile_ecrecover.wasm.metered",
-#    "varname": "ewasmEcrecoverCode",
-#    "gofile": "ewasm_precompile_ecrecover.go"
-#  },
-#  {
-#    "wasmfile": "ewasm_precompile_expmod.wasm.metered",
-#    "varname": "ewasmExpmodCode",
-#    "gofile": "ewasm_precompile_expmod.go"
-#  }
-]
-
 
 def prepare_go_file(wasmfiledir="wasm_to_meter/", wasmfile="", varname="", gofile=""):
   num_arr = []
-  with open(wasmfiledir + wasmfile, "rb") as fin:
+  infilewasm = os.path.join(wasmfiledir, wasmfile)
+  with open(infilewasm, "rb") as fin:
     while True:
       current_byte = fin.read(1)
       if (not current_byte):
@@ -64,9 +34,9 @@ def prepare_go_file(wasmfiledir="wasm_to_meter/", wasmfile="", varname="", gofil
       val = ord(current_byte)
       num_arr.append(str(val))
 
-  fout = open(wasmfiledir + gofile, 'w')
+  outfilego = os.path.join(wasmfiledir, gofile)
+  fout = open(outfilego, 'w')
   fout.write(header)
-  print("varname:", varname)
   fout.write("var {} = []byte{{".format(varname))
   fout.write((", ").join(num_arr))
   fout.write("}")
