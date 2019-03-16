@@ -5,11 +5,15 @@ $ docker build . -t wasm-engines
 
 # docker needs --security-opt because one of the engines (life or wasmer?) uses an uncommon syscall (userfaultfd??)
 
-$ docker run -it --entrypoint=/bin/bash -v $(pwd)/wasmfiles:/wasmfiles -v $(pwd)/testresults:/testresults --security-opt seccomp=./seccompprofile.json wasm-engines
+$ docker run -it -v $(pwd)/wasmfiles:/wasmfiles -v $(pwd)/testresults:/testresults --security-opt seccomp=./seccompprofile.json wasm-engines
 
 $ PYTHONIOENCODING=UTF-8 python3 ewasm.py |& tee wasm-run1.log
 
-# TODO: use python 3.7 instead of PYTHONIOENCODING
+# use python 3.7 instead of PYTHONIOENCODING
+# sys.stdout.reconfigure(encoding='utf-8')
+
+$ python3.7 ewasm.py |& tee wasm-run1.log
+
 
 $ cd evmrace
 $ docker build . -t evmrace

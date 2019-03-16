@@ -15,6 +15,8 @@ import datetime
 import shutil
 import glob
 
+sys.stdout.reconfigure(encoding='utf-8')
+
 OUT_DIR = "/testresults"
 
 
