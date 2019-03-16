@@ -123,6 +123,8 @@ class WasmVMBencher:
     def run_engine(self, vm, cmd):
         if vm == "lifePolymerase":
             result_record = self.do_life_poly_test(cmd)
+        elif vm == "life":
+            result_record = self.do_life_test(cmd)
         elif vm == "wavm":
             result_record = self.do_wavm_test(cmd)
         elif vm == "wasmer":

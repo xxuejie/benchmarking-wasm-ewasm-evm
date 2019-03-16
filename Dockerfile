@@ -1,24 +1,20 @@
 FROM ubuntu:18.04
 
-# https://github.com/kuralabs/docker-python3-dev/blob/master/Dockerfile
-
 # System deps
 RUN apt-get update
 RUN apt-get install -y software-properties-common git sudo build-essential wget curl nano \
     autoconf automake cmake libtool llvm-6.0 make ninja-build unzip zlib1g-dev texinfo
 
 
-# Install Python stack
-RUN apt-get update \
-    && apt-get --yes --no-install-recommends install \
-        python3 python3-dev \
-        python3-pip python3-venv python3-wheel python3-setuptools \
-        build-essential \
-        python-dev \
-        graphviz git openssh-client \
-    && rm -rf /var/lib/apt/lists/*
+# install python 3.7
+RUN apt-add-repository ppa:deadsnakes/ppa && apt-get update
+RUN apt-get install -y python3.7
+RUN wget https://bootstrap.pypa.io/get-pip.py && python3.7 get-pip.py
+# linking /usr/bin/python3 to /usr/bin/python3.7 will break add-apt-reposity
+# RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
 
-# Install Go 1.11
+
+# Install Go 1.11 (update 2019-03-16: now installs go 1.12)
 RUN add-apt-repository ppa:longsleep/golang-backports && apt-get update && apt-get install -y golang-go
 
 # Install Clang 8 (needed for life -polymerase)
@@ -76,26 +72,23 @@ RUN cd wavm-build && ninja
 #RUN cd binaryen && cmake . && make
 
 
+## wasmer superseded by wasmtime
 # install wasmer
 # download wasmer binary
 #RUN curl https://get.wasmer.io -sSfL | sh
 #RUN /bin/bash -c "source /root/.wasmer/wasmer.sh"
-
 # build wasmer from source
 # wasmer release 0.1.4 has segmentation violation with rustc 1.32.0. use 1.31.1
-RUN rustup default 1.31.1
-
-#  0.1.4 release from December 2018 is faster than atest wasmer master (2019-2-16) 
-RUN git clone --single-branch --branch bench-release https://github.com/cdetrio/wasmer.git
-RUN cd wasmer && cargo build --release
-
+#RUN rustup default 1.31.1
+#  0.1.4 release from December 2018 is faster than latest wasmer master (2019-2-16) 
+#RUN git clone --single-branch --branch bench-release https://github.com/cdetrio/wasmer.git
+#RUN cd wasmer && cargo build --release
 # bug where running wasmer v0.1.4 with python `Popen(stderr=subprocess.STDOUT)`
 # causes an error: `Runtime error: trap at 0x0 - illegal instruction`.
 # the fix is to run Popen without the stderr flag.
-
-RUN rustup default nightly-2019-01-15
-RUN git clone --single-branch --branch bench-compile-time https://github.com/cdetrio/wasmer.git wasmer-master
-RUN cd wasmer-master && cargo build --release
+#RUN rustup default nightly-2019-01-15
+#RUN git clone --single-branch --branch bench-compile-time https://github.com/cdetrio/wasmer.git wasmer-master
+#RUN cd wasmer-master && cargo build --release
 
 
 # install wasmtime
@@ -111,7 +104,7 @@ RUN mkdir wabt/build && cd wabt/build && cmake .. && make
 
 # install python modules needed for benchmarking script
 RUN pip3 install click durationpy
-# TODO: alias python to python3
+
 
 # install nodejs
 #RUN mkdir node
@@ -138,6 +131,13 @@ RUN echo 'deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main' >> /
 # install asmble
 RUN wget https://github.com/cdetrio/asmble/releases/download/0.4.2-fl-bench-times/asmble-0.4.2-fl-bench-times.tar
 RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
+
+
+# install wag
+#RUN apt-get install -y libcapstone-dev
+#RUN git clone --single-branch --branch runtime-design https://github.com/gballet/wag.git
+#RUN cd wag && go build ./cmd/ethereum/...
+
 
 # copy benchmarking scripts
 RUN mkdir -p /testresults
