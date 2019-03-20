@@ -50,7 +50,7 @@ RUN cd evmone/build && cmake --build . -- -j
 
 # install python modules needed for benchmarking script
 RUN pip3 install durationpy jinja2 pandas
-# TODO: alias python to python3
+# didnt alias python to python3 because it will break apt (assumes python is python2)
 
 RUN mkdir -p /evmraceresults
 COPY ./evmrace /evmrace

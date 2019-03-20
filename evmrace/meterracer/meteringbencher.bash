@@ -21,10 +21,10 @@ git fetch cdetrio
 git checkout ewasm-metering-bench
 
 
-echo "installing chisel..."
-cd /root
-# chisel needed to make ewasm-precompiles
-cargo install chisel
+#echo "installing chisel..."
+#cd /root
+# chisel not actually needed to make ewasm-precompiles
+#cargo install chisel
 
 
 echo "building sentinel-rs branch gas-bin-util..."
@@ -35,13 +35,14 @@ cargo build --bin wasm-gas
 # built binary sentinel-rs/wasm-utils/target/debug/wasm-gas
 
 
-
 echo "compiling precompiles to wasm..."
 cd /root
 git clone https://github.com/ewasm/ewasm-precompiles.git
 cd ewasm-precompiles
+git fetch
+git checkout no-usegas
 #git checkout a89d44ca5b8687fdf84a1ae718a61fc10d05de22 # Dec 22 2018
-git checkout f5e87b039afc9dbe4d7251dbe3fcd4656f626e0f # Jan 25 2019
+#git checkout f5e87b039afc9dbe4d7251dbe3fcd4656f626e0f # Jan 25 2019
 # ecrecover and modexp not ready yet
 #git checkout 7443316a8d24b7e9434f65c1bb6df69eb2eee740 # Feb 13 2019
 make
@@ -52,18 +53,20 @@ make
 # modexp needed too
 
 
+declare -a precnames=("bn128add" "bn128mul" "bn128pairing" "sha256" "modexp" "ecrecover")
+#declare -a wasmfiles=("ewasm_precompile_ecadd.wasm" "ewasm_precompile_ecmul.wasm" "ewasm_precompile_ecpairing.wasm" "ewasm_precompile_sha256.wasm" "ewasm_precompile_modexp.wasm" "ewasm_precompile_ecrecover.wasm")
+declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_sha256" "ewasm_precompile_modexp" "ewasm_precompile_ecrecover")
 
-declare -a wasmfiles=("ewasm_precompile_ecadd.wasm" "ewasm_precompile_ecmul.wasm" "ewasm_precompile_ecpairing.wasm" "ewasm_precompile_sha256.wasm")
 
 # WASM_FILE_DIR = "/meterracer/wasm_to_meter"
 
-echo "moving wasm files to /root/wasm_to_meter..."
+echo "moving wasm files to /meterracer/wasm_to_meter..."
 cd /root/ewasm-precompiles/target/wasm32-unknown-unknown/release/
 mkdir -p /meterracer/wasm_to_meter
 
-for i in "${wasmfiles[@]}"
+for filename in "${wasmfiles[@]}"
 do
-  mv "$i" /meterracer/wasm_to_meter/
+  mv "${filename}.wasm" /meterracer/wasm_to_meter/
 done
 
 
@@ -76,9 +79,9 @@ done
 
 echo "injecting metering into wasm files..."
 cd /meterracer/wasm_to_meter
-for i in "${wasmfiles[@]}"
+for filename in "${wasmfiles[@]}"
 do
-  dest="$i.metered"
+  dest="{$filename}.metered"
   /root/sentinel-rs/wasm-utils/target/debug/wasm-gas "$i" "$dest"
 done
 
@@ -86,6 +89,10 @@ done
 
 #cd /meterracer
 #python3 metered_to_go.py
+
+
+#python3 rungobench.py --wasm-dir="/meterracer/wasm_to_meter/" --name-suffix="no-metering" --sha256="sha256_unmetered.wasm"
+
 
 
 
