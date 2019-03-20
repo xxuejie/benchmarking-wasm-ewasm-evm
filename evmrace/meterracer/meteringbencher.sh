@@ -83,7 +83,8 @@ done
 
 
 cd /meterracer
-rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"no-metering\""
+csvname="metering_precompile_benchmarks.csv"
+rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"no-metering\" --csv_name=\"${csvname}\""
 suffix="minified"
 for i in "${!wasmfiles[@]}"
 do

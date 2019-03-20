@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 # hyphens in argument name are converted to underscores
 parser.add_argument('--name_suffix', help='suffix for all test names (e.g. --name-suffix="metering-inline")')
 parser.add_argument('--wasm_dir', help='full path of dir containing wasm files')
+parser.add_argument('--csv_name', help='dir to save csv file')
 parser.add_argument('--sha256', help='wasm file for sha256')
 parser.add_argument('--bn128add', help='wasm file for bn128add')
 parser.add_argument('--bn128mul', help='wasm file for bn128mul')
@@ -28,7 +29,7 @@ args = vars(parser.parse_args())
 # output path should be mounted docker volume
 RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
-RESULT_CSV_FILENAME = "metering_precompile_benchmarks.csv"
+#RESULT_CSV_FILENAME = "metering_precompile_benchmarks.csv"
 
 GO_VM_PATH = "/go-ethereum/core/vm/"
 
@@ -107,10 +108,12 @@ arg_names = list(args.keys())
 arg_names = [n for n in arg_names if args[n] is not None]
 arg_names.remove('name_suffix')
 arg_names.remove('wasm_dir')
+arg_names.remove('csv_name')
 
 def main():
   test_name_suffix = args['name_suffix']
   wasm_file_dir = args['wasm_dir']
+  csv_file_name = args['csv_name']
   #for name in arg_names:
   #  if args[name]:
   all_bench_results = []
@@ -132,7 +135,7 @@ def main():
     all_bench_results.extend(bench_name_results)
 
 
-  saveResults(all_bench_results, RESULT_CSV_OUTPUT_PATH, RESULT_CSV_FILENAME)
+  saveResults(all_bench_results, RESULT_CSV_OUTPUT_PATH, csv_file_name)
   print("all_bench_results:", all_bench_results)
 
 

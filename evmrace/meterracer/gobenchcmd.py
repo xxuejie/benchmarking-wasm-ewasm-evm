@@ -8,22 +8,6 @@ import shutil
 import shlex
 
 
-# go test -bench BenchmarkPrecompiledSha256 -benchtime 5s
-
-# mv /meterracer/wasm_to_meter/*.go /meterracer/gofiles
-
-# move .go files to go-ethereum directory
-# mv ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go.backup
-# cp /meterracer/gofiles/ewasm_precompile_ecadd.go ~/go/src/github.com/ethereum/go-ethereum/core/vm/
-
-# mv ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go.backup
-
-
-# cd ~/go/src/github.com/ethereum/go-ethereum/core/vm/
-# go test -bench BenchmarkPrecompiledBn256Add -benchtime 5s
-
-# mv ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go.backup ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go
-
 """
 ~/go/src/github.com/ethereum/go-ethereum/core/vm# go test -bench BenchmarkPrecompiledBn256Add -benchtime 5s
 gas used: 612825
@@ -115,8 +99,6 @@ def do_go_bench_cmd(go_bench_cmd, go_dir):
             raw_stdoutlines.append(line)  # pass bytes as is
         p.wait()
 
-    #stdoutlines = [line.decode('utf8') for line in raw_stdoutlines]
-    # line.decode('utf8') crashes python.  AttributeError: 'str' object has no attribute 'decode'
     print("process finished.")
     return raw_stdoutlines
 
