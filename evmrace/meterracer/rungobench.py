@@ -265,7 +265,7 @@ def main():
     for bench_name in GO_BENCHES:
         bench_name_results = []
         print("benching unmetered and metered {}".format(bench_name))
-        go_bench_cmd = "go test -timeout 1800s -bench {} -benchtime 2s".format(bench_name)
+        go_bench_cmd = "go test -timeout 1800s -bench {} -benchtime 10s".format(bench_name)
         # first benchmark unmetered wasm code
         print("doing unmetered first...")
         gofile = prepare_ewasm_go_file(bench_name, metered=False)

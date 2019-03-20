@@ -52,17 +52,22 @@ make
 # modexp needed too
 
 
+
+declare -a wasmfiles=("ewasm_precompile_ecadd.wasm" "ewasm_precompile_ecmul.wasm" "ewasm_precompile_ecpairing.wasm" "ewasm_precompile_sha256.wasm")
+
 # WASM_FILE_DIR = "/meterracer/wasm_to_meter"
 
 echo "moving wasm files to /root/wasm_to_meter..."
 cd /root/ewasm-precompiles/target/wasm32-unknown-unknown/release/
 mkdir -p /meterracer/wasm_to_meter
-declare -a wasmfiles=("ewasm_precompile_ecadd.wasm" "ewasm_precompile_ecmul.wasm" "ewasm_precompile_ecpairing.wasm" "ewasm_precompile_sha256.wasm")
+
 for i in "${wasmfiles[@]}"
 do
   mv "$i" /meterracer/wasm_to_meter/
 done
 
+
+# TODO: minify wasm files using https://github.com/ewasm/sentinel-rs/tree/minify-tool
 
 
 #
@@ -71,14 +76,12 @@ done
 
 echo "injecting metering into wasm files..."
 cd /meterracer/wasm_to_meter
-declare -a wasmfiles=("ewasm_precompile_ecadd.wasm" "ewasm_precompile_ecmul.wasm" "ewasm_precompile_ecpairing.wasm" "ewasm_precompile_sha256.wasm")
 for i in "${wasmfiles[@]}"
 do
   dest="$i.metered"
   /root/sentinel-rs/wasm-utils/target/debug/wasm-gas "$i" "$dest"
 done
 
-# TODO: use chisel drop sections (name, debug) to minimize size of unmetered precompiles
 
 
 #cd /meterracer
