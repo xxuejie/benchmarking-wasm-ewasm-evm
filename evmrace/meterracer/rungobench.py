@@ -5,13 +5,16 @@ import shutil
 import shlex
 import prepgocode
 import gobenchcmd
+import csv
+import time, datetime
 
 import argparse, sys
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--name-suffix', help='suffix for all test names (e.g. --name-suffix="metering-inline")')
-parser.add_argument('--wasm-dir', help='full path of dir containing wasm files')
+# hyphens in argument name are converted to underscores
+parser.add_argument('--name_suffix', help='suffix for all test names (e.g. --name-suffix="metering-inline")')
+parser.add_argument('--wasm_dir', help='full path of dir containing wasm files')
 parser.add_argument('--sha256', help='wasm file for sha256')
 parser.add_argument('--bn128add', help='wasm file for bn128add')
 parser.add_argument('--bn128mul', help='wasm file for bn128mul')
@@ -19,7 +22,7 @@ parser.add_argument('--bn128pairing', help='wasm file for bn128pairing')
 parser.add_argument('--modexp', help='wasm file for modexp')
 parser.add_argument('--ecrecover', help='wasm file for ecrecover')
 
-args = parser.parse_args()
+args = vars(parser.parse_args())
 
 
 # output path should be mounted docker volume
@@ -29,7 +32,7 @@ RESULT_CSV_FILENAME = "metering_precompile_benchmarks.csv"
 
 GO_VM_PATH = "/go-ethereum/core/vm/"
 
-#python3 rungobench.py --wasm-dir="/meterracer/wasm_to_meter/" --name-suffix="no-metering" --sha256="sha256_unmetered.wasm"
+#python3 rungobench.py --wasm_dir="/meterracer/wasm_to_meter/" --name_suffix="no-metering" --sha256="sha256_unmetered.wasm"
 
 
 
@@ -100,21 +103,22 @@ def saveResults(precompile_benchmarks, output_file_path, output_file_name):
 ## should take as input: wasm_file_name, test_name_suffix, 
 # e.g. rungobench.py --sha256=sha256_metered_inline.wasm 
 
-arg_names = args.keys()
-arg_names.remove('name-suffix')
-arg_names.remove('wasm-dir')
+arg_names = list(args.keys())
+arg_names = [n for n in arg_names if args[n] is not None]
+arg_names.remove('name_suffix')
+arg_names.remove('wasm_dir')
 
 def main():
-  test_name_suffix = args['name-suffix']
-  wasm_file_dir = args['wasm-dir']
+  test_name_suffix = args['name_suffix']
+  wasm_file_dir = args['wasm_dir']
   #for name in arg_names:
   #  if args[name]:
   all_bench_results = []
   for precompile_name in arg_names:
+    print("doing precompile:", precompile_name)
 
     wasm_file = args[precompile_name]
     prec_info = GO_PRECOMPILE_NAMEDEFS[precompile_name]
-    go_prec_file = GO_PRECOMPILE_NAMEDEFS[]
 
     gofile = prepare_ewasm_go_file(prec_info, wasm_file_dir, wasm_file)
     gofilesrcpath = os.path.join(wasm_file_dir, gofile)
@@ -124,6 +128,7 @@ def main():
     shutil.move(gofilesrcpath, GO_VM_PATH)
 
     bench_name_results = gobenchcmd.do_go_precompile_bench(GO_VM_PATH, prec_info['benchname'], test_name_suffix)
+    print("got results from gobenchcmd:", bench_name_results)
     all_bench_results.extend(bench_name_results)
 
 

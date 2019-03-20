@@ -3,8 +3,6 @@
 import re
 import subprocess
 import nanodurationpy as durationpy
-import csv
-import time, datetime
 import os
 import shutil
 import shlex
@@ -136,7 +134,7 @@ def parse_go_bench_output(stdoutlines, name_suffix="no-metering"):
     # then match ns/op, then append result and wait for next test name
     bench_tests = []
     test_name = ""
-    gas_used = 0
+    gas_used = -1
     nanosecs = 0
     for line in stdoutlines:
         matchName = re.search(benchRegex, line)
@@ -152,11 +150,11 @@ def parse_go_bench_output(stdoutlines, name_suffix="no-metering"):
         if matchNanos:
             nanosecs = matchNanos.group(1)
 
-        if int(nanosecs) > 0 and int(gas_used) > 0 and test_name != "":
+        if int(nanosecs) > 0 and int(gas_used) >= 0 and test_name != "":
             bench_time = durationpy.from_str("{}ns".format(nanosecs))
             bench_tests.append({'name': "{}-{}".format(test_name, name_suffix), 'gas': gas_used, 'time': bench_time.total_seconds()})
             print("parsed test result:", bench_tests[-1])
-            gas_used = 0
+            gas_used = -1
             nanosecs = 0
             test_name = ""
 

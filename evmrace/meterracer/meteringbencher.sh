@@ -65,10 +65,11 @@ done
 echo "building sentinel-rs branch minify-tool..."
 cd /root
 git clone --single-branch --branch minify-tool https://github.com/ewasm/sentinel-rs.git sentinel-minify-tool
+# .cargo/config sets default build target to wasm
+rm sentinel-minify-tool/.cargo/config
 cd sentinel-minify-tool/wasm-utils/cli
 cargo build --bin wasm-minify
 # built binary sentinel-rs/wasm-utils/target/debug/wasm-minify
-
 
 
 echo "minifying wasm files..."
@@ -76,10 +77,33 @@ cd /meterracer/wasm_to_meter
 for filename in "${wasmfiles[@]}"
 do
   dest="${filename}_minified.wasm"
-  /root/sentinel-rs/wasm-utils/target/debug/wasm-gas "${filename}.wasm" "$dest"
+  /root/sentinel-minify-tool/wasm-utils/target/debug/wasm-minify "${filename}.wasm" "$dest"
 done
 
 
+
+cd /meterracer
+rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"no-metering\""
+suffix="minified"
+for i in "${!wasmfiles[@]}"
+do
+  #${wasmfiles[i]}
+  #${precnames[i]}
+  #  --bn128mul="ewasm_precompile_ecmul_minified.wasm"
+  precarg="--${precnames[i]}=\"${wasmfiles[i]}_minified.wasm\""
+  rungocmd+=" ${precarg}"
+done
+echo "running command: ${rungocmd}"
+eval $rungocmd
+
+
+
+
+#for filename in "${wasmfiles[@]}"
+#do
+#  dest="${filename}_minified.wasm"
+#  /root/sentinel-minify-tool/wasm-utils/target/debug/wasm-minify "${filename}.wasm" "$dest"
+#done
 
 
 
@@ -103,8 +127,9 @@ done
 #cd /meterracer
 #python3 metered_to_go.py
 
+#python3 rungobench.py --wasm_dir="/meterracer/wasm_to_meter/" --name_suffix="no-metering" --sha256="ewasm_precompile_sha256_minified.wasm" --bn128add="ewasm_precompile_ecadd_minified.wasm" --bn128mul="ewasm_precompile_ecmul_minified.wasm" --bn128pairing="ewasm_precompile_ecpairing_minified.wasm" --modexp="ewasm_precompile_modexp_minified.wasm"
 
-#python3 rungobench.py --wasm-dir="/meterracer/wasm_to_meter/" --name-suffix="no-metering" --sha256="sha256_unmetered.wasm"
+#python3 rungobench.py --wasm_dir="/meterracer/wasm_to_meter/" --name_suffix="no-metering" --sha256="ewasm_precompile_sha256_minified.wasm"
 
 
 
