@@ -21,26 +21,17 @@ git fetch cdetrio
 git checkout ewasm-metering-bench
 
 
-#echo "installing chisel..."
-#cd /root
-# chisel not actually needed to make ewasm-precompiles
-#cargo install chisel
-
-
-echo "building sentinel-rs branch gas-bin-util..."
+echo "installing chisel..."
 cd /root
-git clone --single-branch --branch gas-bin-util https://github.com/ewasm/sentinel-rs.git
-cd sentinel-rs/wasm-utils/cli
-cargo build --bin wasm-gas
-# built binary sentinel-rs/wasm-utils/target/debug/wasm-gas
+# chisel needed to make ewasm-precompiles
+cargo install chisel
+
 
 
 echo "compiling precompiles to wasm..."
 cd /root
-git clone https://github.com/ewasm/ewasm-precompiles.git
+git clone --single-branch --branch no-usegas https://github.com/ewasm/ewasm-precompiles.git
 cd ewasm-precompiles
-git fetch
-git checkout no-usegas
 #git checkout a89d44ca5b8687fdf84a1ae718a61fc10d05de22 # Dec 22 2018
 #git checkout f5e87b039afc9dbe4d7251dbe3fcd4656f626e0f # Jan 25 2019
 # ecrecover and modexp not ready yet
@@ -70,6 +61,28 @@ do
 done
 
 
+
+echo "building sentinel-rs branch minify-tool..."
+cd /root
+git clone --single-branch --branch minify-tool https://github.com/ewasm/sentinel-rs.git sentinel-minify-tool
+cd sentinel-minify-tool/wasm-utils/cli
+cargo build --bin wasm-minify
+# built binary sentinel-rs/wasm-utils/target/debug/wasm-minify
+
+
+
+echo "minifying wasm files..."
+cd /meterracer/wasm_to_meter
+for filename in "${wasmfiles[@]}"
+do
+  dest="${filename}_minified.wasm"
+  /root/sentinel-rs/wasm-utils/target/debug/wasm-gas "${filename}.wasm" "$dest"
+done
+
+
+
+
+
 # TODO: minify wasm files using https://github.com/ewasm/sentinel-rs/tree/minify-tool
 
 
@@ -77,13 +90,13 @@ done
 # Do things in python from here??
 #
 
-echo "injecting metering into wasm files..."
-cd /meterracer/wasm_to_meter
-for filename in "${wasmfiles[@]}"
-do
-  dest="{$filename}.metered"
-  /root/sentinel-rs/wasm-utils/target/debug/wasm-gas "$i" "$dest"
-done
+#echo "injecting metering into wasm files..."
+#cd /meterracer/wasm_to_meter
+#for filename in "${wasmfiles[@]}"
+#do
+#  dest="{$filename}.metered"
+#  /root/sentinel-rs/wasm-utils/target/debug/wasm-gas "$i" "$dest"
+#done
 
 
 
