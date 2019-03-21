@@ -144,7 +144,7 @@ def parse_go_bench_output(stdoutlines, name_suffix="no-metering"):
 
 
 def do_go_precompile_bench(go_dir, bench_name, name_suffix):
-    go_bench_cmd = "go test -timeout 1800s -bench {} -benchtime 10s".format(bench_name)
+    go_bench_cmd = "go test -timeout 1800s -bench {} -benchtime 7s".format(bench_name)
     bench_output = do_go_bench_cmd(go_bench_cmd, go_dir)
     bench_results = parse_go_bench_output(bench_output, name_suffix=name_suffix)
     return bench_results

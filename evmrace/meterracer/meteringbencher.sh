@@ -45,8 +45,10 @@ make
 
 
 declare -a precnames=("bn128add" "bn128mul" "bn128pairing" "sha256" "modexp" "ecrecover")
-#declare -a wasmfiles=("ewasm_precompile_ecadd.wasm" "ewasm_precompile_ecmul.wasm" "ewasm_precompile_ecpairing.wasm" "ewasm_precompile_sha256.wasm" "ewasm_precompile_modexp.wasm" "ewasm_precompile_ecrecover.wasm")
 declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_sha256" "ewasm_precompile_modexp" "ewasm_precompile_ecrecover")
+
+#declare -a precnames=("bn128add" "bn128mul" "sha256")
+#declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_sha256")
 
 
 # WASM_FILE_DIR = "/meterracer/wasm_to_meter"
@@ -71,7 +73,6 @@ cd sentinel-minify-tool/wasm-utils/cli
 cargo build --bin wasm-minify
 # built binary sentinel-rs/wasm-utils/target/debug/wasm-minify
 
-
 echo "minifying wasm files..."
 cd /meterracer/wasm_to_meter
 for filename in "${wasmfiles[@]}"
@@ -80,17 +81,12 @@ do
   /root/sentinel-minify-tool/wasm-utils/target/debug/wasm-minify "${filename}.wasm" "$dest"
 done
 
-
-
 cd /meterracer
 csvname="metering_precompile_benchmarks.csv"
 rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"no-metering\" --csv_name=\"${csvname}\""
 suffix="minified"
 for i in "${!wasmfiles[@]}"
 do
-  #${wasmfiles[i]}
-  #${precnames[i]}
-  #  --bn128mul="ewasm_precompile_ecmul_minified.wasm"
   precarg="--${precnames[i]}=\"${wasmfiles[i]}_minified.wasm\""
   rungocmd+=" ${precarg}"
 done
@@ -100,49 +96,104 @@ eval $rungocmd
 
 
 
-#for filename in "${wasmfiles[@]}"
-#do
-#  dest="${filename}_minified.wasm"
-#  /root/sentinel-minify-tool/wasm-utils/target/debug/wasm-minify "${filename}.wasm" "$dest"
-#done
+echo "building sentinel-rs branch inline-finish-with-gas..."
+cd /root
+git clone --single-branch --branch inline-finish-with-gas https://github.com/ewasm/sentinel-rs.git sentinel-inline-metering
+# .cargo/config sets default build target to wasm
+rm sentinel-inline-metering/.cargo/config
+cd sentinel-inline-metering/wasm-utils/cli
+cargo build --bin wasm-gas
+
+echo "injecting inline metering into wasm files..."
+cd /meterracer/wasm_to_meter
+for filename in "${wasmfiles[@]}"
+do
+  src="${filename}_minified.wasm"
+  dest="${filename}_inline_metered.wasm"
+  /root/sentinel-inline-metering/wasm-utils/target/debug/wasm-gas "${filename}.wasm" "$dest"
+done
+
+cd /meterracer
+csvname="metering_precompile_benchmarks_inline.csv"
+rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"metered-inline\" --csv_name=\"${csvname}\""
+#suffix="minified"
+for i in "${!wasmfiles[@]}"
+do
+  precarg="--${precnames[i]}=\"${wasmfiles[i]}_inline_metered.wasm\""
+  rungocmd+=" ${precarg}"
+done
+echo "running command: ${rungocmd}"
+eval $rungocmd
 
 
 
-# TODO: minify wasm files using https://github.com/ewasm/sentinel-rs/tree/minify-tool
 
 
-#
-# Do things in python from here??
-#
+echo "building sentinel-rs branch basicblock-metering..."
+cd /root
+git clone --single-branch --branch basicblock-metering https://github.com/ewasm/sentinel-rs.git sentinel-basicblock-metering
+# .cargo/config sets default build target to wasm
+rm sentinel-basicblock-metering/.cargo/config
+cd sentinel-basicblock-metering/wasm-utils/cli
+cargo build --bin wasm-gas
 
-#echo "injecting metering into wasm files..."
-#cd /meterracer/wasm_to_meter
-#for filename in "${wasmfiles[@]}"
-#do
-#  dest="{$filename}.metered"
-#  /root/sentinel-rs/wasm-utils/target/debug/wasm-gas "$i" "$dest"
-#done
+echo "injecting basic-block metering into wasm files..."
+cd /meterracer/wasm_to_meter
+for filename in "${wasmfiles[@]}"
+do
+  src="${filename}_minified.wasm"
+  dest="${filename}_basicblock_metered.wasm"
+  /root/sentinel-basicblock-metering/wasm-utils/target/debug/wasm-gas "${filename}.wasm" "$dest"
+done
+
+cd /meterracer
+csvname="metering_precompile_benchmarks_basicblock.csv"
+rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"metered-basic-block\" --csv_name=\"${csvname}\""
+#suffix="minified"
+for i in "${!wasmfiles[@]}"
+do
+  precarg="--${precnames[i]}=\"${wasmfiles[i]}_basicblock_metered.wasm\""
+  rungocmd+=" ${precarg}"
+done
+echo "running command: ${rungocmd}"
+eval $rungocmd
 
 
 
-#cd /meterracer
-#python3 metered_to_go.py
+
+echo "building sentinel-rs branch superblock-metering..."
+cd /root
+git clone --single-branch --branch superblock-metering https://github.com/ewasm/sentinel-rs.git sentinel-superblock-metering
+# .cargo/config sets default build target to wasm
+rm sentinel-superblock-metering/.cargo/config
+cd sentinel-superblock-metering/wasm-utils/cli
+cargo build --bin wasm-gas
+
+echo "injecting super-block metering into wasm files..."
+cd /meterracer/wasm_to_meter
+for filename in "${wasmfiles[@]}"
+do
+  src="${filename}_minified.wasm"
+  dest="${filename}_superblock_metered.wasm"
+  /root/sentinel-superblock-metering/wasm-utils/target/debug/wasm-gas "${filename}.wasm" "$dest"
+done
+
+cd /meterracer
+csvname="metering_precompile_benchmarks_superblock.csv"
+rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"metered-super-block\" --csv_name=\"${csvname}\""
+#suffix="minified"
+for i in "${!wasmfiles[@]}"
+do
+  precarg="--${precnames[i]}=\"${wasmfiles[i]}_superblock_metered.wasm\""
+  rungocmd+=" ${precarg}"
+done
+echo "running command: ${rungocmd}"
+eval $rungocmd
+
+
+
+
 
 #python3 rungobench.py --wasm_dir="/meterracer/wasm_to_meter/" --name_suffix="no-metering" --sha256="ewasm_precompile_sha256_minified.wasm" --bn128add="ewasm_precompile_ecadd_minified.wasm" --bn128mul="ewasm_precompile_ecmul_minified.wasm" --bn128pairing="ewasm_precompile_ecpairing_minified.wasm" --modexp="ewasm_precompile_modexp_minified.wasm"
 
-#python3 rungobench.py --wasm_dir="/meterracer/wasm_to_meter/" --name_suffix="no-metering" --sha256="ewasm_precompile_sha256_minified.wasm"
 
-
-
-
-#mkdir -p gofiles
-#mv /meterracer/wasm_to_meter/*.go /meterracer/gofiles
-
-# move .go files to go-ethereum directory
-# mv ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go.backup
-# cp /meterracer/gofiles/ewasm_precompile_ecadd.go ~/go/src/github.com/ethereum/go-ethereum/core/vm/
-
-# cd ~/go/src/github.com/ethereum/go-ethereum/core/vm/
-# go test -v -bench BenchmarkPrecompiledBn256Add -benchtime 5s
-
-# mv ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go.backup ~/go/src/github.com/ethereum/go-ethereum/core/vm/ewasm_precompile_ecadd.go
