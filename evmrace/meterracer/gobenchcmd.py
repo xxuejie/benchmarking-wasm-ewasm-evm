@@ -111,6 +111,8 @@ def parse_go_bench_output(stdoutlines, name_suffix="no-metering"):
     nsOpRegex = "\d+\s+([\d\.]+) ns\/op"
     gasRegex = "gas used: ([\d]+)"
 
+    # FIXME: check for FAIL and skip test
+
     # first match test name
     # then match gas used
     # then match ns/op, then append result and wait for next test name
