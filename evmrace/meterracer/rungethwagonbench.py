@@ -26,10 +26,6 @@ parser.add_argument('--ecrecover', help='wasm file for ecrecover')
 args = vars(parser.parse_args())
 
 
-# output path should be mounted docker volume
-RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
-
-#RESULT_CSV_FILENAME = "metering_precompile_benchmarks.csv"
 
 GO_VM_PATH = "/go-ethereum/core/vm/"
 
@@ -79,24 +75,18 @@ def prepare_ewasm_go_file(go_def_names, wasmdir, wasmfile):
   return gofile
 
 
-def saveResults(precompile_benchmarks, output_file_path, output_file_name):
-  # move existing csv file to backup-datetime-folder
-  ts = time.time()
-  date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
-  ts_folder_name = "backup-{}-{}".format(date_str, round(ts))
-  dest_backup_path = os.path.join(output_file_path, ts_folder_name)
-  result_file = os.path.join(output_file_path, output_file_name)
+def saveResults(precompile_benchmarks, result_file):
+  fieldnames = ['engine', 'test_name', 'total_time', 'compile_time', 'exec_time']
 
-  # back up existing result csv file
-  if os.path.isfile(result_file):
-    os.makedirs(dest_backup_path)
-    shutil.move(result_file, dest_backup_path)
-    print("existing {} moved to {}".format(output_file_name, dest_backup_path))
+  if not os.path.isfile(result_file):
+    # write header if new file
+    with open(result_file, 'w', newline='') as bench_result_file:
+      fieldnames = ['test_name', 'gas', 'time']
+      writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
+      writer.writeheader()
 
-  with open(result_file, 'w', newline='') as bench_result_file:
-    fieldnames = ['test_name', 'gas', 'time']
-    writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
-    writer.writeheader()
+  # append row to file
+  with open(result_file, 'a', newline='') as bench_result_file:
     for test_result in precompile_benchmarks:
       writer.writerow({"test_name" : test_result['name'], "gas" : test_result['gas'], "time" : test_result['time']})
 
@@ -113,7 +103,7 @@ arg_names.remove('csv_name')
 def main():
   test_name_suffix = args['name_suffix']
   wasm_file_dir = args['wasm_dir']
-  csv_file_name = args['csv_name']
+  csv_file = args['csv_name']
   #for name in arg_names:
   #  if args[name]:
   all_bench_results = []
@@ -135,7 +125,7 @@ def main():
     all_bench_results.extend(bench_name_results)
 
 
-  saveResults(all_bench_results, RESULT_CSV_OUTPUT_PATH, csv_file_name)
+  saveResults(all_bench_results, csv_file)
   print("all_bench_results:", all_bench_results)
 
 

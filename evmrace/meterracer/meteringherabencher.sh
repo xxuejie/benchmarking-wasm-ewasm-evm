@@ -46,7 +46,7 @@ OUTPUT_FILE_NAME="hera-v8-metering-nosizeopt-benchmarks.csv"
 
 CSV_FILE="${OUTPUT_PATH}/${OUTPUT_FILE_NAME}"
 
-## TODO: check for existing csv file at output path..
+## check for existing csv file at output path..
 if [ -f "$CSV_FILE" ]; then
   echo "backing up existing file at ${CSV_FILE}..."
   mkdir -p "${OUTPUT_PATH}/backups"

@@ -23,6 +23,12 @@ git checkout ewasm-metering-bench
 [[ $(git log -1) =~ "31c3d4d08dee98a740d0c0db3b76fb0b54cf9c57" ]] || { echo "couldnt checkout geth ewasm-metering-bench branch!!"; exit 1; }
 
 
+# output path should be mounted docker volume
+OUTPUT_PATH="/evmraceresults"
+OUTPUT_FILE_NAME="geth-wagon-metering-nosizeopt-benchmarks.csv"
+CSV_FILE="${OUTPUT_PATH}/${OUTPUT_FILE_NAME}"
+
+
 echo "installing chisel..."
 cd /root
 # chisel needed to make ewasm-precompiles
@@ -36,11 +42,13 @@ cd /root
 
 # for size optimized
 # git clone --single-branch --branch no-usegas https://github.com/ewasm/ewasm-precompiles.git
-# CSV_FILE_PREFIX = "metering_sizeoptimized_gethwagon_benchmarks"
+# OUTPUT_FILE_NAME="geth-wagon-metering-size-optimized-benchmarks.csv"
+# CSV_FILE="${OUTPUT_PATH}/${OUTPUT_FILE_NAME}"
 
 # for nosizeopt
 git clone --single-branch --branch no-sizeopt-no-usegas https://github.com/ewasm/ewasm-precompiles.git
-CSV_FILE_PREFIX = "metering_nosizeopt_gethwagon_benchmarks"
+OUTPUT_FILE_NAME="geth-wagon-metering-nosizeopt-benchmarks.csv"
+CSV_FILE="${OUTPUT_PATH}/${OUTPUT_FILE_NAME}"
 
 cd ewasm-precompiles
 
@@ -148,12 +156,22 @@ done
 declare -a meteredfiletypes=("unmetered" "basicblock" "superblock" "inlinebasic" "inlinesuper")
 declare -a meteringsuffixes=("no-metering" "metered-basic-block" "metered-super-block" "metered-inline-basic" "metered-inline-super")
 
+# backup existing result file
+if [ -f "$CSV_FILE" ]; then
+  echo "backing up existing file at ${CSV_FILE}..."
+  mkdir -p "${OUTPUT_PATH}/backups"
+  timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+  dest="${OUTPUT_PATH}/backups/${timestamp}-${OUTPUT_FILE_NAME}"
+  mv "${CSV_FILE}" "${dest}"
+fi
+
+
 for i in "${!meteredfiletypes[@]}"
 do
   echo "benchmarking ${meteredfiletypes[i]} on geth wagon..."
 
   cd /meterracer
-  csvname="${CSV_FILE_PREFIX}_${meteredfiletypes[i]}.csv"
+  csvname="${CSV_FILE}"
   rungocmd="python3 rungethwagonbench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"${meteringsuffixes[i]}\" --csv_name=\"${csvname}\""
 
   for j in "${!wasmfiles[@]}"
@@ -163,12 +181,10 @@ do
   done
   echo "running command: ${rungocmd}"
   eval $rungocmd
-
 done
 
 
 
 
 #python3 rungobench.py --wasm_dir="/meterracer/wasm_to_meter/" --name_suffix="no-metering" --sha256="ewasm_precompile_sha256_minified.wasm" --bn128add="ewasm_precompile_ecadd_minified.wasm" --bn128mul="ewasm_precompile_ecmul_minified.wasm" --bn128pairing="ewasm_precompile_ecpairing_minified.wasm" --modexp="ewasm_precompile_modexp_minified.wasm"
-
 
