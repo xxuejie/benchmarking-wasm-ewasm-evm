@@ -42,7 +42,7 @@ declare -a meteringsuffixes=("no-metering" "metered-basic-block" "metered-super-
 
 # output path should be mounted docker volume
 OUTPUT_PATH="/evmraceresults"
-OUTPUT_FILE_NAME="geth-hera-metering-benchmarks.csv"
+OUTPUT_FILE_NAME="hera-v8-metering-nosizeopt-benchmarks.csv"
 
 CSV_FILE="${OUTPUT_PATH}/${OUTPUT_FILE_NAME}"
 
@@ -67,7 +67,7 @@ do
     echo "benchmarking ${functionnames[i]} for metered type ${meteringtypes[j]} on geth hera..."
     wasmfile="/meterracer/wasm_to_meter/${functionfiles[i]}_${meteringtypes[j]}.wasm"
 
-    gethherabenchcmd="python3 rungethherabench.py --testvectors=${jsonfile} --csvfile=${CSV_FILE} --testsuffix=\"${meteringsuffixes[j]}\" --wasmfile=${wasmfile}"
+    gethherabenchcmd="python3 runherav8bench.py --testvectors=${jsonfile} --csvfile=${CSV_FILE} --testsuffix=\"${meteringsuffixes[j]}\" --wasmfile=${wasmfile}"
     echo "running command: ${gethherabenchcmd}"
     eval $gethherabenchcmd
   done

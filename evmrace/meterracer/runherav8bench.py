@@ -270,7 +270,7 @@ def doBenchInput(wasmfile, testname, input, expected):
     input_results.extend(bench_results)
   # all hera engines done
   # do node v8
-  
+
   node_v8_runs = do_node_v8_bench(wasmfile, input, expected)
   node_results = []
   for run in node_v8_runs:

@@ -33,8 +33,15 @@ cargo install --version 0.1.0 chisel
 
 echo "compiling precompiles to wasm..."
 cd /root
+
+# for size optimized
 # git clone --single-branch --branch no-usegas https://github.com/ewasm/ewasm-precompiles.git
+# CSV_FILE_PREFIX = "metering_sizeoptimized_gethwagon_benchmarks"
+
+# for nosizeopt
 git clone --single-branch --branch no-sizeopt-no-usegas https://github.com/ewasm/ewasm-precompiles.git
+CSV_FILE_PREFIX = "metering_nosizeopt_gethwagon_benchmarks"
+
 cd ewasm-precompiles
 
 #git checkout a89d44ca5b8687fdf84a1ae718a61fc10d05de22 # Dec 22 2018 - has version problem with subtle
@@ -49,6 +56,7 @@ make
 #declare -a precnames=("bn128add" "bn128mul" "bn128pairing" "sha256" "modexp" "ecrecover")
 #declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_sha256" "ewasm_precompile_modexp" "ewasm_precompile_ecrecover")
 
+# small set for testing
 declare -a precnames=("bn128add" "bn128mul" "sha256")
 declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_sha256")
 
@@ -145,7 +153,7 @@ do
   echo "benchmarking ${meteredfiletypes[i]} on geth wagon..."
 
   cd /meterracer
-  csvname="metering_precompile_gethwagon_benchmarks_${meteredfiletypes[i]}.csv"
+  csvname="${CSV_FILE_PREFIX}_${meteredfiletypes[i]}.csv"
   rungocmd="python3 rungethwagonbench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"${meteringsuffixes[i]}\" --csv_name=\"${csvname}\""
 
   for j in "${!wasmfiles[@]}"
