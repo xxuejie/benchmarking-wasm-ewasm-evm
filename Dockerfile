@@ -99,7 +99,7 @@ RUN cd wasmtime && cargo build --release
 
 # install wabt
 RUN git clone --recursive --single-branch --branch bench-times https://github.com/cdetrio/wabt.git
-RUN mkdir wabt/build && cd wabt/build && cmake .. && make
+RUN mkdir wabt/build && cd wabt/build && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF .. && make
 
 
 # install python modules needed for benchmarking script
@@ -113,6 +113,8 @@ RUN cd node && curl -fsSLO --compressed https://nodejs.org/dist/v11.10.0/node-v1
 RUN cd node && tar -xvf node-v11.10.0-linux-x64.tar.gz -C /usr/local/ --strip-components=1 --no-same-owner
 RUN cd node && ln -s /usr/local/bin/node ./node
 COPY node-timer.js ./node/node-timer.js
+
+# curl -fsSLO --compressed https://nodejs.org/download/nightly/v12.0.0-nightly20190325cdb87d9548/node-v12.0.0-nightly20190325cdb87d9548-linux-x64.tar.gz
 
 
 # install java
