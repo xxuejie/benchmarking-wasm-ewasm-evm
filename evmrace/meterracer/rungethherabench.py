@@ -4,7 +4,7 @@ import os
 import shutil
 import shlex
 import csv
-import time, datetime
+import time
 import json
 import re
 import subprocess
@@ -21,6 +21,10 @@ parser.add_argument('--csvfile', help='full path of csv file to save results')
 args = vars(parser.parse_args())
 
 GO_VM_PATH = "/root/go/src/github.com/ethereum/go-ethereum"
+
+
+NODE_BIN_PATH = "/root/node"
+NODE_BENCHING_SCRIPT = "/meterracer/metering-bench-v8.js"
 
 HERA_ENGINES = ['wabt', 'binaryen', 'wavm']
 
@@ -55,6 +59,84 @@ def saveResults(benchmark_results, result_file):
                         "compile_time": test_result['compile_time'],
                         "exec_time": test_result['exec_time']
                       })
+
+
+
+
+"""
+$ node --experimental-wasm-bigint metering-bench-v8.js /meterracer/wasm_to_meter/ewasm_precompile_ecmul_unmetered.wasm "039730ea8dff1254c0fee9c0ea777d29a9c710b7e616683f194f18c43b43b869073a5ffcc6fc7a28c30723d6e58ce577356982d65b833a5a5c15bf9024b43d98ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" "00a1a234d08efaa2616607e31eca1980128b00b415c845ff25bba3afcb81dc00242077290ed33906aeb8e42fd98c41bcb9057ba03421af3f2d08cfc441186024"
+instantiate: 61.675ms
+exec: 3.225ms
+gas used: 26880219n
+useGas calls: 2
+"""
+
+def parse_node_v8_output(stdoutlines):
+    #print("parsing node v8 bench output for {}".format(testname))
+    instantiateRegex = "instantiate: ([\w\.]+)"
+    execRegex = "exec: ([\w\.]+)"
+    #gasRegex = "gas used: ([\d]+)"
+
+    # TODO: check for fail
+
+    compile_line = stdoutlines[-4]
+    exec_line = stdoutlines[-3]
+    compile_match = re.search(instantiateRegex, compile_line)
+    exec_match = re.search(execRegex, exec_line)
+    compile_time = compile_match.group(1)
+    exec_time = exec_match.group(1)
+    compile_time = durationpy.from_str(compile_time)
+    exec_time = durationpy.from_str(exec_time)
+    total_time = compile_time.total_seconds() + exec_time.total_seconds()
+
+    bench_run = {
+      'total_time': total_time,
+      'compile_time': compile_time.total_seconds(),
+      'exec_time': exec_time.total_seconds()
+    }
+
+    return bench_run
+
+
+
+def run_node_v8_cmd(wasmfile, input, expected):
+  node_v8_bench_cmd = "{} --experimental-wasm-bigint --liftoff --no-wasm-tier-up {} {} \"{}\" \"{}\"".format(NODE_BIN_PATH, NODE_BENCHING_SCRIPT, wasmfile, input, expected)
+  print("running node v8 benchmark...\n{}".format(node_v8_bench_cmd))
+  node_cmd = shlex.split(node_v8_bench_cmd)
+  raw_stdoutlines = []
+  with subprocess.Popen(node_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True) as p:
+    for line in p.stdout: # b'\n'-separated lines
+      print(line, end='')
+      raw_stdoutlines.append(line)  # pass bytes as is
+    p.wait()
+
+  return raw_stdoutlines
+
+
+def do_node_v8_bench(wasmfile, input, expected):
+  node_bench_results = []
+  # get time to do one run
+  start_time = time.time()
+  output = run_node_v8_cmd(wasmfile, input, expected)
+  end_time = time.time()
+  result = parse_node_v8_output(output)
+  node_bench_results.append(result)
+
+  duration = end_time - start_time
+  # calculate number of runs in 60 seconds
+  repetitions = round(60 / duration)
+  if repetitions < 3:
+    repetitions = 3 # minimum
+  if repetitions > 50:
+    repetitions = 50 # maximum
+
+  for i in range(repetitions - 1):
+    print("run {} of {} for node v8...".format(i + 2, repetitions))
+    run_output = run_node_v8_cmd(wasmfile, input, expected)
+    run_result = parse_node_v8_output(run_output)
+    node_bench_results.append(run_result)
+
+  return node_bench_results
 
 
 """
@@ -114,7 +196,6 @@ ok      github.com/ethereum/go-ethereum/core/vm/runtime 1.567s
 """
 
 
-# parsing code from https://github.com/ethereum/benchmarking/blob/master/constantinople/scripts/postprocess_geth_v2.py
 def parse_go_bench_output(stdoutlines, testname):
   print("parsing go bench output for {}".format(testname))
   benchRegex = "Time \[us\]: (\d+) \(instantiation\: (\d+)\, execution: (\d+)\)"
@@ -185,9 +266,25 @@ def doBenchInput(wasmfile, testname, input, expected):
         'exec_time': run['exec_time']
       }
       bench_results.append(bench_test)
-
+    # all runs in bench_results
     input_results.extend(bench_results)
-
+  # all hera engines done
+  # do node v8
+  
+  node_v8_runs = do_node_v8_bench(wasmfile, input, expected)
+  node_results = []
+  for run in node_v8_runs:
+    node_bench_run = {
+      'engine': 'v8-liftoff',
+      'test_name': testname,
+      'total_time': run['total_time'],
+      'compile_time': run['compile_time'],
+      'exec_time': run['exec_time']
+    }
+    node_results.append(node_bench_run)
+  # done with node
+  print("got node results:", node_results)
+  input_results.extend(node_results)
   return input_results
 
 
