@@ -76,42 +76,37 @@ case C.EVMC_LOADER_SUCCESS
 called C.evmc_create_hera_wrapper...
 have instance...
 returning instance...
-Time [us]: 52262 = 4467 + 47794
+Time [us]: 5248 (instantiation: 2136, execution: 3112)
 got return bytes: 025a6f4181d2b4ea8b724290ffb40156eb0adb514c688556eb79cdea0752c2bb2eff3f31dea215f1eb86023a133a996eb6300b44da664d64251d05381bb8a02e
 goos: linux
 goarch: amd64
 pkg: github.com/ethereum/go-ethereum/core/vm/runtime
 BenchmarkCallEwasm-4    ewasmfile: /meterracer/wasm_to_meter/ewasm_precompile_ecmul_unmetered.wasm
-Time [us]: 46845 = 2335 + 44509
-Time [us]: 47053 = 2695 + 44358
-Time [us]: 50477 = 2607 + 47870
-Time [us]: 46749 = 2475 + 44274
-Time [us]: 48535 = 2160 + 46375
-Time [us]: 48005 = 3192 + 44813
-Time [us]: 45550 = 2021 + 43529
-Time [us]: 48307 = 2147 + 46159
-Time [us]: 47698 = 2429 + 45269
-Time [us]: 47538 = 2258 + 45280
-Time [us]: 57195 = 2449 + 54746
-Time [us]: 48642 = 2449 + 46193
-Time [us]: 51318 = 2311 + 49007
-Time [us]: 48854 = 2148 + 46706
-Time [us]: 47330 = 2387 + 44942
-Time [us]: 48032 = 2300 + 45732
-Time [us]: 46139 = 2563 + 43576
-Time [us]: 47659 = 2423 + 45235
-Time [us]: 46701 = 2635 + 44066
-Time [us]: 45779 = 2382 + 43396
-Time [us]: 46179 = 2373 + 43805
-Time [us]: 45666 = 2076 + 43589
-Time [us]: 47696 = 2019 + 45677
-Time [us]: 52181 = 2117 + 50064
-Time [us]: 51554 = 2352 + 49201
-Time [us]: 47319 = 2227 + 45092
-Time [us]: 46048 = 2094 + 43954
-Time [us]: 53341 = 2279 + 51062
-Time [us]: 49082 = 2778 + 46304
-Time [us]: 50262 = 2199 + 48063
+Time [us]: 4917 (instantiation: 2069, execution: 2847)
+Time [us]: 4856 (instantiation: 2127, execution: 2729)
+Time [us]: 5221 (instantiation: 2463, execution: 2758)
+Time [us]: 4907 (instantiation: 2234, execution: 2673)
+Time [us]: 5002 (instantiation: 2336, execution: 2665)
+Time [us]: 5056 (instantiation: 2220, execution: 2836)
+Time [us]: 5225 (instantiation: 2198, execution: 3027)
+Time [us]: 4957 (instantiation: 2247, execution: 2710)
+Time [us]: 5072 (instantiation: 2207, execution: 2864)
+Time [us]: 5186 (instantiation: 2297, execution: 2889)
+Time [us]: 4891 (instantiation: 2122, execution: 2768)
+Time [us]: 5077 (instantiation: 2300, execution: 2777)
+Time [us]: 5021 (instantiation: 2227, execution: 2794)
+Time [us]: 4872 (instantiation: 2189, execution: 2683)
+Time [us]: 5337 (instantiation: 2381, execution: 2955)
+Time [us]: 5143 (instantiation: 2470, execution: 2673)
+Time [us]: 4904 (instantiation: 2176, execution: 2727)
+Time [us]: 5286 (instantiation: 2334, execution: 2951)
+Time [us]: 5156 (instantiation: 2524, execution: 2632)
+Time [us]: 5199 (instantiation: 2501, execution: 2697)
+Time [us]: 5176 (instantiation: 2295, execution: 2880)
+Time [us]: 5260 (instantiation: 2138, execution: 3121)
+Time [us]: 4765 (instantiation: 2218, execution: 2546)
+Time [us]: 5078 (instantiation: 2165, execution: 2913)
+Time [us]: 5360 (instantiation: 2334, execution: 3026)
 got return bytes: 025a6f4181d2b4ea8b724290ffb40156eb0adb514c688556eb79cdea0752c2bb2eff3f31dea215f1eb86023a133a996eb6300b44da664d64251d05381bb8a02e
       30          48629905 ns/op
 PASS
@@ -122,7 +117,7 @@ ok      github.com/ethereum/go-ethereum/core/vm/runtime 1.567s
 # parsing code from https://github.com/ethereum/benchmarking/blob/master/constantinople/scripts/postprocess_geth_v2.py
 def parse_go_bench_output(stdoutlines, testname):
   print("parsing go bench output for {}".format(testname))
-  benchRegex = "Time \[us\]: (\d+) = (\d+) \+ (\d+)"
+  benchRegex = "Time \[us\]: (\d+) \(instantiation\: (\d+)\, execution: (\d+)\)"
 
   # we dont care about the nsop except as an averaged total
   # might be good to double check and compare against average total printed by hera
@@ -172,8 +167,10 @@ def run_go_bench_cmd(go_bench_cmd):
 def doBenchInput(wasmfile, testname, input, expected):
   input_results = []
   for engine in HERA_ENGINES:
+    print("doing engine: {}".format(engine))
     #go_bench_cmd =  "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --benchtime 7s --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(engine)
     # use default benchtime because for fast ones we get too much output from hera on stdout
+    # TODO: if engine is wavm, run for longer time
     go_bench_cmd =  "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(engine)
     go_bench_cmd = go_bench_cmd + " --ewasmfile=\"{}\" --input=\"{}\" --expected=\"{}\"".format(wasmfile, input, expected)
     bench_output = run_go_bench_cmd(go_bench_cmd)
