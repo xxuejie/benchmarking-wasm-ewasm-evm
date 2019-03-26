@@ -220,6 +220,9 @@ def main():
         if benchname == "__pycache__":
             continue
         print("start benching: ", benchname)
+        #
+        # TODO: benchname-inputs.json has moved to /evmrace/inputvectors/benchname-inputs.json
+        #
         with open("{}/{}-inputs.json".format(benchname, benchname)) as f:
             bench_inputs = json.load(f)
             go_evm_plain_bench_info = get_go_evm_bench(benchname, shift_optimized=False)

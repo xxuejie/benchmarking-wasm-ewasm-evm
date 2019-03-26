@@ -61,7 +61,7 @@ cd /meterracer
 for i in "${!functionnames[@]}"
 do
   echo "start benchmarking ${functionnames[i]} all metering types on geth hera..."
-  jsonfile="/evmrace/${functionnames[i]}/${functionnames[i]}-inputs.json"
+  jsonfile="/evmrace/inputvectors/${functionnames[i]}-inputs.json"
   for j in "${!meteringtypes[@]}"
   do
     echo "benchmarking ${functionnames[i]} for metered type ${meteringtypes[j]} on geth hera..."

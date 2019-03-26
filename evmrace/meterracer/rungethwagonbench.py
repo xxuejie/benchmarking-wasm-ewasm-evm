@@ -75,7 +75,7 @@ def prepare_ewasm_go_file(go_def_names, wasmdir, wasmfile):
 
 
 def saveResults(precompile_benchmarks, result_file):
-  # the other metering results have these columns:
+  # the hera and v8 metering results have these columns:
   #fieldnames = ['engine', 'test_name', 'total_time', 'compile_time', 'exec_time']
 
   if not os.path.isfile(result_file):
