@@ -6,6 +6,14 @@ cd /root
 cargo install --version 0.1.0 chisel
 # new version 0.2.0 not working
 
+# chisel has broken before, when installed more than once
+# it returns invalid argument
+
+#root@cb198feb896c:~# /root/.cargo/bin/chisel --help
+#Usage: /root/.cargo/bin/chisel in.wasm out.wasm
+
+#root@cb198feb896c:~# ls -al /root/.cargo/bin/chisel
+#-rwxr-xr-x 1 root root 2750288 Mar 26 22:24 /root/.cargo/bin/chisel
 
 
 echo "compiling precompiles to wasm..."
@@ -36,13 +44,13 @@ declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_p
 
 WASM_FILE_DIR="/meterracer/wasm_to_meter/"
 
-echo "moving wasm files to ${WASM_FILE_DIR}..."
+echo "copying wasm files to ${WASM_FILE_DIR}..."
 cd /root/ewasm-precompiles/target/wasm32-unknown-unknown/release/
 mkdir -p "${WASM_FILE_DIR}"
 
 for filename in "${wasmfiles[@]}"
 do
-  mv "${filename}.wasm" "${WASM_FILE_DIR}"
+  cp "${filename}.wasm" "${WASM_FILE_DIR}"
 done
 
 
