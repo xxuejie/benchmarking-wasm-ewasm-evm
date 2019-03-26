@@ -3,8 +3,8 @@
 import os
 import shutil
 import shlex
-import prepgocode
-import gobenchcmd
+import prepgethwagoncode
+import wagonbenchcmd
 import csv
 import time, datetime
 
@@ -75,7 +75,7 @@ def prepare_ewasm_go_file(go_def_names, wasmdir, wasmfile):
   varname = go_def_names['varname']
   gofile = go_def_names['gofile']
   print("preparing ewasm go file with wasmfile:", wasmfile)
-  prepgocode.prepare_go_file(wasmfiledir=wasmdir, wasmfile=wasmfile, varname=varname, gofile=gofile)
+  prepgethwagoncode.prepare_go_file(wasmfiledir=wasmdir, wasmfile=wasmfile, varname=varname, gofile=gofile)
   return gofile
 
 
@@ -130,8 +130,8 @@ def main():
         os.remove(gofiledestpath)
     shutil.move(gofilesrcpath, GO_VM_PATH)
 
-    bench_name_results = gobenchcmd.do_go_precompile_bench(GO_VM_PATH, prec_info['benchname'], test_name_suffix)
-    print("got results from gobenchcmd:", bench_name_results)
+    bench_name_results = wagonbenchcmd.do_go_precompile_bench(GO_VM_PATH, prec_info['benchname'], test_name_suffix)
+    print("got results from wagonbenchcmd:", bench_name_results)
     all_bench_results.extend(bench_name_results)
 
 

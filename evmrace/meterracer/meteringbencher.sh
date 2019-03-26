@@ -193,7 +193,7 @@ done
 
 cd /meterracer
 csvname="metering_precompile_benchmarks_superblock.csv"
-rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"metered-super-block\" --csv_name=\"${csvname}\""
+rungocmd="python3 rungethwagonbench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"metered-super-block\" --csv_name=\"${csvname}\""
 #suffix="minified"
 for i in "${!wasmfiles[@]}"
 do
