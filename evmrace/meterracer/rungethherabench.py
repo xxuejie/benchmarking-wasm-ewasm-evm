@@ -173,6 +173,7 @@ def doBenchInput(wasmfile, testname, input, expected):
   input_results = []
   for engine in HERA_ENGINES:
     #go_bench_cmd =  "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --benchtime 7s --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(engine)
+    # use default benchtime because for fast ones we get too much output from hera on stdout
     go_bench_cmd =  "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(engine)
     go_bench_cmd = go_bench_cmd + " --ewasmfile=\"{}\" --input=\"{}\" --expected=\"{}\"".format(wasmfile, input, expected)
     bench_output = run_go_bench_cmd(go_bench_cmd)
@@ -196,13 +197,14 @@ def doBenchInput(wasmfile, testname, input, expected):
 def main():
   test_name_suffix = args['testsuffix']
   wasm_file= args['wasmfile']
-  csv_file_name = args['csvfile']
+  csv_file_path = args['csvfile']
   testvectorfile = args['testvectors']
   with open(testvectorfile, "r") as read_file:
     testvectors = json.load(read_file)
 
   bench_results_all_inputs = []
-  for test in testvectors:
+  for i, test in enumerate(testvectors):
+    print("benchmarking input {} of {}: {}".format(i, len(testvectors), test['name']))
     #test['name'] test['input'] test['expected']
     # test['name'] == "bn128_mul-chfast2"
     test_name = "{}-{}".format(test['name'], test_name_suffix)

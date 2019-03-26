@@ -9,7 +9,7 @@
 cd /root/go/src/github.com/ethereum/go-ethereum
 git fetch ewasm
 git checkout ewasm/evmc6-static-hera
-[[ $(git log -1) =~ "e2453bb4c59fc0894c7d0ddfbc5dd1a2be2c3c57" ]] || { echo "couldnt checkout geth evmc6-static-hera branch!!"; exit 1; }
+[[ $(git log -1) =~ "46902ddbd1d618a2683474d8179ad4a67cbdeb40" ]] || { echo "couldnt checkout geth evmc6-static-hera branch!!"; exit 1; }
 
 # TODO: make sure hera static libs are there
 
