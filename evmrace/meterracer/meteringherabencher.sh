@@ -17,8 +17,13 @@ git checkout ewasm/evmc6-static-hera
 #declare -a functionfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_sha256" "ewasm_precompile_modexp" "ewasm_precompile_ecrecover")
 #declare -a functionnames=("bn128add" "bn128mul" "bn128pairing" "sha256" "modexp" "ecrecover")
 
-declare -a functionfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_modexp")
-declare -a functionnames=("bn128_add" "bn128_mul" "bn128_pairing" "modexp")
+# full set
+#declare -a functionfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_modexp")
+#declare -a functionnames=("bn128_add" "bn128_mul" "bn128_pairing" "modexp")
+
+# small set for testing
+declare -a functionfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul")
+declare -a functionnames=("bn128_add" "bn128_mul")
 
 declare -a meteringtypes=("unmetered" "basicblock" "superblock" "inlinebasic" "inlinesuper")
 declare -a meteringsuffixes=("no-metering" "metered-basic-block" "metered-super-block" "metered-inline-basic" "metered-inline-super")

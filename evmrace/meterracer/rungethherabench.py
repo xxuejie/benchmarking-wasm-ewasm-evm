@@ -6,6 +6,9 @@ import shlex
 import csv
 import time, datetime
 import json
+import re
+import subprocess
+import nanodurationpy as durationpy
 
 import argparse, sys
 
@@ -17,9 +20,13 @@ parser.add_argument('--testvectors', help='full path of json file with test vect
 parser.add_argument('--csvfile', help='full path of csv file to save results')
 args = vars(parser.parse_args())
 
-GO_VM_PATH = "/go-ethereum/core/vm/"
+GO_VM_PATH = "/root/go/src/github.com/ethereum/go-ethereum"
 
 HERA_ENGINES = ['wabt', 'binaryen', 'wavm']
+
+#TEST_TIMES = {
+#  ''
+#}
 
 # go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --vm.ewasm="/root/hera/build/src/libhera.so,benchmark=true,engine=wabt" --ewasmfile="/meterracer/wasm_to_meter/ewasm_precompile_ecmul_unmetered.wasm" --input="070a8d6a982153cae4be29d434e8faef8a47b274a053f5a4ee2a6c9c13c31e5c031b8ce914eba3a9ffb989f9cdd5b0f01943074bf4f0f315690ec3cec6981afc30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd46" --expected="025a6f4181d2b4ea8b724290ffb40156eb0adb514c688556eb79cdea0752c2bb2eff3f31dea215f1eb86023a133a996eb6300b44da664d64251d05381bb8a02e" 
 
@@ -115,7 +122,7 @@ ok      github.com/ethereum/go-ethereum/core/vm/runtime 1.567s
 # parsing code from https://github.com/ethereum/benchmarking/blob/master/constantinople/scripts/postprocess_geth_v2.py
 def parse_go_bench_output(stdoutlines, testname):
   print("parsing go bench output for {}".format(testname))
-  benchRegex = "Time [us]: (\d+) = (\d+) + (\d+)"
+  benchRegex = "Time \[us\]: (\d+) = (\d+) \+ (\d+)"
 
   # we dont care about the nsop except as an averaged total
   # might be good to double check and compare against average total printed by hera
@@ -165,7 +172,8 @@ def run_go_bench_cmd(go_bench_cmd):
 def doBenchInput(wasmfile, testname, input, expected):
   input_results = []
   for engine in HERA_ENGINES:
-    go_bench_cmd =  "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --benchtime 7s --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(engine)
+    #go_bench_cmd =  "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --benchtime 7s --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(engine)
+    go_bench_cmd =  "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(engine)
     go_bench_cmd = go_bench_cmd + " --ewasmfile=\"{}\" --input=\"{}\" --expected=\"{}\"".format(wasmfile, input, expected)
     bench_output = run_go_bench_cmd(go_bench_cmd)
     bench_runs = parse_go_bench_output(bench_output, testname)
@@ -186,8 +194,6 @@ def doBenchInput(wasmfile, testname, input, expected):
 
 
 def main():
-  # TODO: use args['precompilename'] ?
-
   test_name_suffix = args['testsuffix']
   wasm_file= args['wasmfile']
   csv_file_name = args['csvfile']
