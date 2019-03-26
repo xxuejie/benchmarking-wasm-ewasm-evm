@@ -179,12 +179,15 @@ do
     precarg="--${precnames[j]}=\"${wasmfiles[j]}_${meteredfiletypes[i]}.wasm\""
     rungocmd+=" ${precarg}"
   done
+
+  # the blank line before or after the eval is needed, or bash breaks
   echo "running command: ${rungocmd}"
   eval $rungocmd
+
 done
 
 
 
 
-#python3 rungobench.py --wasm_dir="/meterracer/wasm_to_meter/" --name_suffix="no-metering" --sha256="ewasm_precompile_sha256_minified.wasm" --bn128add="ewasm_precompile_ecadd_minified.wasm" --bn128mul="ewasm_precompile_ecmul_minified.wasm" --bn128pairing="ewasm_precompile_ecpairing_minified.wasm" --modexp="ewasm_precompile_modexp_minified.wasm"
+# python3 rungobench.py --wasm_dir="/meterracer/wasm_to_meter/" --name_suffix="no-metering" --sha256="ewasm_precompile_sha256_minified.wasm" --bn128add="ewasm_precompile_ecadd_minified.wasm" --bn128mul="ewasm_precompile_ecmul_minified.wasm" --bn128pairing="ewasm_precompile_ecpairing_minified.wasm" --modexp="ewasm_precompile_modexp_minified.wasm"
 

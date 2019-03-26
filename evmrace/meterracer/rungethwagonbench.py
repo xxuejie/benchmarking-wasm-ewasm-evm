@@ -6,7 +6,6 @@ import shlex
 import prepgethwagoncode
 import wagonbenchcmd
 import csv
-import time, datetime
 
 import argparse, sys
 
@@ -76,19 +75,20 @@ def prepare_ewasm_go_file(go_def_names, wasmdir, wasmfile):
 
 
 def saveResults(precompile_benchmarks, result_file):
-  fieldnames = ['engine', 'test_name', 'total_time', 'compile_time', 'exec_time']
+  # the other metering results have these columns:
+  #fieldnames = ['engine', 'test_name', 'total_time', 'compile_time', 'exec_time']
 
   if not os.path.isfile(result_file):
     # write header if new file
     with open(result_file, 'w', newline='') as bench_result_file:
-      fieldnames = ['test_name', 'gas', 'time']
+      fieldnames = ['engine', 'test_name', 'gas', 'time']
       writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
       writer.writeheader()
 
   # append row to file
   with open(result_file, 'a', newline='') as bench_result_file:
     for test_result in precompile_benchmarks:
-      writer.writerow({"test_name" : test_result['name'], "gas" : test_result['gas'], "time" : test_result['time']})
+      writer.writerow({"engine" : "wagon", "test_name" : test_result['name'], "gas" : test_result['gas'], "time" : test_result['time']})
 
 
 ## should take as input: wasm_file_name, test_name_suffix, 
