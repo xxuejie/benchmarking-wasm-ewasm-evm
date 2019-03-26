@@ -20,17 +20,20 @@ git remote add cdetrio https://github.com/cdetrio/go-ethereum.git
 git fetch cdetrio
 git checkout ewasm-metering-bench
 
+[[ $(git log -1) =~ "31c3d4d08dee98a740d0c0db3b76fb0b54cf9c57" ]] || { echo "couldnt checkout geth ewasm-metering-bench branch!!"; exit 1; }
+
 
 echo "installing chisel..."
 cd /root
 # chisel needed to make ewasm-precompiles
-cargo install chisel
+cargo install --version 0.1.0 chisel
 
 
 
 echo "compiling precompiles to wasm..."
 cd /root
-git clone --single-branch --branch no-usegas https://github.com/ewasm/ewasm-precompiles.git
+# git clone --single-branch --branch no-usegas https://github.com/ewasm/ewasm-precompiles.git
+git clone --single-branch --branch no-sizeopt-no-usegas https://github.com/ewasm/ewasm-precompiles.git
 cd ewasm-precompiles
 
 
@@ -42,7 +45,7 @@ cd ewasm-precompiles
 #git checkout a89d44ca5b8687fdf84a1ae718a61fc10d05de22 # Dec 22 2018 - has version problem with subtle
 #git checkout f5e87b039afc9dbe4d7251dbe3fcd4656f626e0f # Jan 25 2019 - has 30x slowdown with basic block metering
 
-git checkout 1a829a34df071f54800a4a1efd305e090633924e # Feb 13 2019 - use panic and not revert - still has slowdown
+#git checkout 1a829a34df071f54800a4a1efd305e090633924e # Feb 13 2019 - use panic and not revert - still has slowdown
 
 # git checkout 49ce56446f74fa3512499399c4d2edfcaff20911 # Feb 13 2019 - size optimizations
 
@@ -57,11 +60,11 @@ make
 # modexp needed too
 
 
-declare -a precnames=("bn128add" "bn128mul" "bn128pairing" "sha256" "modexp" "ecrecover")
-declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_sha256" "ewasm_precompile_modexp" "ewasm_precompile_ecrecover")
+#declare -a precnames=("bn128add" "bn128mul" "bn128pairing" "sha256" "modexp" "ecrecover")
+#declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_sha256" "ewasm_precompile_modexp" "ewasm_precompile_ecrecover")
 
-#declare -a precnames=("bn128add" "bn128mul" "sha256")
-#declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_sha256")
+declare -a precnames=("bn128add" "bn128mul" "sha256")
+declare -a wasmfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_sha256")
 
 
 # WASM_FILE_DIR = "/meterracer/wasm_to_meter"
@@ -102,6 +105,7 @@ declare -a sentineldirs=("sentinel-basicblock-metering" "sentinel-superblock-met
 # build metering injectors
 
 for i in "${!sentinelrepobranches[@]}"
+do
   echo "building sentinel-rs branch ${sentinelrepobranches[i]}..."
   cd /root
   git clone --single-branch --branch ${sentinelrepobranches[i]} https://github.com/ewasm/sentinel-rs.git ${sentineldirs[i]}
@@ -109,7 +113,7 @@ for i in "${!sentinelrepobranches[@]}"
   rm ${sentineldirs[i]}/.cargo/config
   cd ${sentineldirs[i]}/wasm-utils/cli
   cargo build --bin wasm-gas
-do
+done
 
 
 declare -a meteringtypes=("basicblock" "superblock" "inlinebasic" "inlinesuper")
@@ -136,8 +140,9 @@ done
 
 # run benchmarks on unmetered wasm files
 
+cd /meterracer
 csvname="metering_precompile_benchmarks_unmetered.csv"
-rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"no-metering\" --csv_name=\"${csvname}\""
+rungocmd="python3 rungethwagonbench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"no-metering\" --csv_name=\"${csvname}\""
 suffix="minified"
 for i in "${!wasmfiles[@]}"
 do
