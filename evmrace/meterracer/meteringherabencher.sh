@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 
 
-# go test -v ./core/vm/runtime/... -run TestCallEwasm --vm.ewasm="/root/hera/build/src/libhera.so,benchmark=true,engine=binaryen" --ewasmfile="/meterracer/wasm_to_meter/ewasm_precompile_ecpairing_minified.wasm" --input="00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed090689d0585ff075ec9e99ad690c3395bc4b313370b38ef355acdadcd122975b12c85ea5db8c6deb4aab71808dcb408fe3d1e7690c43d37b4ce6cc0166fa7daa00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c21800deef121f1e76426a00665e5c4479674322d4f75edadd46debd5cd992f6ed275dc4a288d1afb3cbb1ac09187524c7db36395df7be3b99e673b13a075a65ec1d9befcd05a5323e6da4d435f3b617cdb3af83285c2df711ef39c01571827f9d" --expected="0000000000000000000000000000000000000000000000000000000000000001" 
+# go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --vm.ewasm="/root/hera/build/src/libhera.so,benchmark=true,engine=wabt" --ewasmfile="/meterracer/wasm_to_meter/ewasm_precompile_ecmul_unmetered.wasm" --input="070a8d6a982153cae4be29d434e8faef8a47b274a053f5a4ee2a6c9c13c31e5c031b8ce914eba3a9ffb989f9cdd5b0f01943074bf4f0f315690ec3cec6981afc30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd46" --expected="025a6f4181d2b4ea8b724290ffb40156eb0adb514c688556eb79cdea0752c2bb2eff3f31dea215f1eb86023a133a996eb6300b44da664d64251d05381bb8a02e" 
 
 
 
-# TODO: checkout geth branch that uses statically linked hera
+# checkout geth branch that uses statically linked hera
+cd /root/go/src/github.com/ethereum/go-ethereum
+git fetch ewasm
+git checkout ewasm/evmc6-static-hera
+[[ $(git log -1) =~ "e2453bb4c59fc0894c7d0ddfbc5dd1a2be2c3c57" ]] || { echo "couldnt checkout geth evmc6-static-hera branch!!"; exit 1; }
+
+# TODO: make sure hera static libs are there
 
 
 #declare -a functionfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_sha256" "ewasm_precompile_modexp" "ewasm_precompile_ecrecover")
