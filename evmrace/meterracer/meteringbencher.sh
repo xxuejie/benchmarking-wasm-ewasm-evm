@@ -94,7 +94,48 @@ do
   /root/sentinel-minify-tool/wasm-utils/target/debug/wasm-minify "${filename}.wasm" "$dest"
 done
 
-cd /meterracer
+
+
+declare -a sentinelrepobranches=("basicblock-metering" "superblock-metering" "inline-basic-block" "inline-super-block")
+declare -a sentineldirs=("sentinel-basicblock-metering" "sentinel-superblock-metering" "sentinel-inlinebasic-metering" "sentinel-inlinesuper-metering")
+
+# build metering injectors
+
+for i in "${!sentinelrepobranches[@]}"
+  echo "building sentinel-rs branch ${sentinelrepobranches[i]}..."
+  cd /root
+  git clone --single-branch --branch ${sentinelrepobranches[i]} https://github.com/ewasm/sentinel-rs.git ${sentineldirs[i]}
+  # .cargo/config sets default build target to wasm
+  rm ${sentineldirs[i]}/.cargo/config
+  cd ${sentineldirs[i]}/wasm-utils/cli
+  cargo build --bin wasm-gas
+do
+
+
+declare -a meteringtypes=("basicblock" "superblock" "inlinebasic" "inlinesuper")
+
+# inject metering into minified wasm files
+
+for i in "${!meteringtypes[@]}"
+do
+  echo "injecting ${meteringtypes[i]} metering into wasm files..."
+  sentinelbin="/root/${sentineldirs[i]}/wasm-utils/target/debug/wasm-gas"
+
+  cd /meterracer/wasm_to_meter
+  for filename in "${wasmfiles[@]}"
+  do
+    src="${filename}_minified.wasm"
+    dest="${filename}_${meteringtypes[i]}_metered.wasm"
+    sentinelcmd="${sentinelbin} ${src} ${dest}"
+    eval $sentinelcmd
+  done
+
+done
+
+
+
+# run benchmarks on unmetered wasm files
+
 csvname="metering_precompile_benchmarks_unmetered.csv"
 rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"no-metering\" --csv_name=\"${csvname}\""
 suffix="minified"
@@ -108,101 +149,27 @@ eval $rungocmd
 
 
 
+# run benchmarks on metered wasm files
 
-echo "building sentinel-rs branch inline-finish-with-gas..."
-cd /root
-git clone --single-branch --branch inline-finish-with-gas https://github.com/ewasm/sentinel-rs.git sentinel-inline-metering
-# .cargo/config sets default build target to wasm
-rm sentinel-inline-metering/.cargo/config
-cd sentinel-inline-metering/wasm-utils/cli
-cargo build --bin wasm-gas
+declare -a meteringsuffixes=("basic-block" "super-block" "inline-basic" "inline-super")
 
-echo "injecting inline metering into wasm files..."
-cd /meterracer/wasm_to_meter
-for filename in "${wasmfiles[@]}"
+for i in "${!meteringtypes[@]}"
 do
-  src="${filename}_minified.wasm"
-  dest="${filename}_inline_metered.wasm"
-  /root/sentinel-inline-metering/wasm-utils/target/debug/wasm-gas "${filename}.wasm" "$dest"
+  echo "benchmarking ${meteringtypes[i]} on geth wagon..."
+
+  cd /meterracer
+  csvname="metering_precompile_gethwagon_benchmarks_${meteringtypes[i]}.csv"
+  rungocmd="python3 rungethwagonbench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"metered-${meteringsuffixes[i]}\" --csv_name=\"${csvname}\""
+
+  for j in "${!wasmfiles[@]}"
+  do
+    precarg="--${precnames[j]}=\"${wasmfiles[j]}_${meteringtypes[i]}_metered.wasm\""
+    rungocmd+=" ${precarg}"
+  done
+  echo "running command: ${rungocmd}"
+  eval $rungocmd
+
 done
-
-cd /meterracer
-csvname="metering_precompile_benchmarks_inline.csv"
-rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"metered-inline\" --csv_name=\"${csvname}\""
-#suffix="minified"
-for i in "${!wasmfiles[@]}"
-do
-  precarg="--${precnames[i]}=\"${wasmfiles[i]}_inline_metered.wasm\""
-  rungocmd+=" ${precarg}"
-done
-echo "running command: ${rungocmd}"
-eval $rungocmd
-
-
-
-
-
-echo "building sentinel-rs branch basicblock-metering..."
-cd /root
-git clone --single-branch --branch basicblock-metering https://github.com/ewasm/sentinel-rs.git sentinel-basicblock-metering
-# .cargo/config sets default build target to wasm
-rm sentinel-basicblock-metering/.cargo/config
-cd sentinel-basicblock-metering/wasm-utils/cli
-cargo build --bin wasm-gas
-
-echo "injecting basic-block metering into wasm files..."
-cd /meterracer/wasm_to_meter
-for filename in "${wasmfiles[@]}"
-do
-  src="${filename}_minified.wasm"
-  dest="${filename}_basicblock_metered.wasm"
-  /root/sentinel-basicblock-metering/wasm-utils/target/debug/wasm-gas "${filename}.wasm" "$dest"
-done
-
-cd /meterracer
-csvname="metering_precompile_benchmarks_basicblock.csv"
-rungocmd="python3 rungobench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"metered-basic-block\" --csv_name=\"${csvname}\""
-#suffix="minified"
-for i in "${!wasmfiles[@]}"
-do
-  precarg="--${precnames[i]}=\"${wasmfiles[i]}_basicblock_metered.wasm\""
-  rungocmd+=" ${precarg}"
-done
-echo "running command: ${rungocmd}"
-eval $rungocmd
-
-
-
-
-echo "building sentinel-rs branch superblock-metering..."
-cd /root
-git clone --single-branch --branch superblock-metering https://github.com/ewasm/sentinel-rs.git sentinel-superblock-metering
-# .cargo/config sets default build target to wasm
-rm sentinel-superblock-metering/.cargo/config
-cd sentinel-superblock-metering/wasm-utils/cli
-cargo build --bin wasm-gas
-
-echo "injecting super-block metering into wasm files..."
-cd /meterracer/wasm_to_meter
-for filename in "${wasmfiles[@]}"
-do
-  src="${filename}_minified.wasm"
-  dest="${filename}_superblock_metered.wasm"
-  /root/sentinel-superblock-metering/wasm-utils/target/debug/wasm-gas "${filename}.wasm" "$dest"
-done
-
-cd /meterracer
-csvname="metering_precompile_benchmarks_superblock.csv"
-rungocmd="python3 rungethwagonbench.py --wasm_dir=\"/meterracer/wasm_to_meter/\" --name_suffix=\"metered-super-block\" --csv_name=\"${csvname}\""
-#suffix="minified"
-for i in "${!wasmfiles[@]}"
-do
-  precarg="--${precnames[i]}=\"${wasmfiles[i]}_superblock_metered.wasm\""
-  rungocmd+=" ${precarg}"
-done
-echo "running command: ${rungocmd}"
-eval $rungocmd
-
 
 
 
