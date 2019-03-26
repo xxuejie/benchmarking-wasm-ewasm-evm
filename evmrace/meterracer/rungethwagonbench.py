@@ -87,6 +87,7 @@ def saveResults(precompile_benchmarks, result_file):
 
   # append row to file
   with open(result_file, 'a', newline='') as bench_result_file:
+    writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
     for test_result in precompile_benchmarks:
       writer.writerow({"engine" : "wagon", "test_name" : test_result['name'], "gas" : test_result['gas'], "time" : test_result['time']})
 
