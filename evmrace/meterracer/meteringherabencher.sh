@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 
 
-# go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --vm.ewasm="/root/hera/build/src/libhera.so,benchmark=true,engine=wabt" --ewasmfile="/meterracer/wasm_to_meter/ewasm_precompile_ecmul_unmetered.wasm" --input="070a8d6a982153cae4be29d434e8faef8a47b274a053f5a4ee2a6c9c13c31e5c031b8ce914eba3a9ffb989f9cdd5b0f01943074bf4f0f315690ec3cec6981afc30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd46" --expected="025a6f4181d2b4ea8b724290ffb40156eb0adb514c688556eb79cdea0752c2bb2eff3f31dea215f1eb86023a133a996eb6300b44da664d64251d05381bb8a02e" 
-
-
-
 # checkout geth branch that uses statically linked hera
 cd /root/go/src/github.com/ethereum/go-ethereum
 git fetch ewasm
@@ -14,31 +10,9 @@ git checkout ewasm/evmc6-static-hera
 # TODO: make sure hera static libs are there
 
 
-#declare -a functionfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_sha256" "ewasm_precompile_modexp" "ewasm_precompile_ecrecover")
-#declare -a functionnames=("bn128add" "bn128mul" "bn128pairing" "sha256" "modexp" "ecrecover")
+#### *** note if wasm files are size optimized or not
 
-# full set
-#declare -a functionfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_modexp")
-#declare -a functionnames=("bn128_add" "bn128_mul" "bn128_pairing" "modexp")
-
-# small set for testing
-declare -a functionfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul")
-declare -a functionnames=("bn128_add" "bn128_mul")
-
-declare -a meteringtypes=("unmetered" "basicblock" "superblock" "inlinebasic" "inlinesuper")
-declare -a meteringsuffixes=("no-metering" "metered-basic-block" "metered-super-block" "metered-inline-basic" "metered-inline-super")
-
-
-#/evmrace/bn128_add/bn128_add-inputs.json
-#/evmrace/bn128_mul/bn128_mul-inputs.json
-#/evmrace/bn128_pairing/bn128_pairing-inputs.json
-#/evmrace/modexp/modexp-inputs.json
-
-# TODO: copy sha256 inputs into json file
-# TODO: copy ecrecover inputs into json file 
-
-
-
+WASM_PATH="/meterracer/wasm_to_meter/"
 
 # output path should be mounted docker volume
 OUTPUT_PATH="/evmraceresults"
@@ -46,7 +20,21 @@ OUTPUT_FILE_NAME="hera-v8-metering-nosizeopt-benchmarks.csv"
 
 CSV_FILE="${OUTPUT_PATH}/${OUTPUT_FILE_NAME}"
 
-## check for existing csv file at output path..
+
+# full set
+#declare -a functionfiles=("ewasm_precompile_ecadd" "ewasm_precompile_ecmul" "ewasm_precompile_ecpairing" "ewasm_precompile_modexp" "ewasm_precompile_sha256" "ewasm_precompile_ecrecover")
+#declare -a functionnames=("bn128_add" "bn128_mul" "bn128_pairing" "modexp" "sha256" "ecrecover")
+
+# small set for testing
+declare -a functionfiles=("ewasm_precompile_modexp" "ewasm_precompile_sha256" "ewasm_precompile_ecrecover")
+declare -a functionnames=("modexp" "sha256" "ecrecover")
+
+declare -a meteringtypes=("unmetered" "basicblock" "superblock" "inlinebasic" "inlinesuper")
+declare -a meteringsuffixes=("no-metering" "metered-basic-block" "metered-super-block" "metered-inline-basic" "metered-inline-super")
+
+
+
+## backup existing csv file at output path..
 if [ -f "$CSV_FILE" ]; then
   echo "backing up existing file at ${CSV_FILE}..."
   mkdir -p "${OUTPUT_PATH}/backups"
@@ -54,7 +42,6 @@ if [ -f "$CSV_FILE" ]; then
   dest="${OUTPUT_PATH}/backups/${timestamp}-${OUTPUT_FILE_NAME}"
   mv "${CSV_FILE}" "${dest}"
 fi
-
 
 
 cd /meterracer
@@ -65,7 +52,7 @@ do
   for j in "${!meteringtypes[@]}"
   do
     echo "benchmarking ${functionnames[i]} for metered type ${meteringtypes[j]} on geth hera..."
-    wasmfile="/meterracer/wasm_to_meter/${functionfiles[i]}_${meteringtypes[j]}.wasm"
+    wasmfile="${WASM_PATH}${functionfiles[i]}_${meteringtypes[j]}.wasm"
 
     gethherabenchcmd="python3 runherav8bench.py --testvectors=${jsonfile} --csvfile=${CSV_FILE} --testsuffix=\"${meteringsuffixes[j]}\" --wasmfile=${wasmfile}"
     echo "running command: ${gethherabenchcmd}"
