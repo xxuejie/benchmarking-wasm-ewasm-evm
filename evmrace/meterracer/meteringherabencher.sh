@@ -3,6 +3,7 @@
 
 # checkout geth branch that uses statically linked hera
 cd /root/go/src/github.com/ethereum/go-ethereum
+git remote add ewasm https://github.com/ewasm/go-ethereum
 git fetch ewasm
 git checkout ewasm/evmc6-static-hera
 [[ $(git log -1) =~ "46902ddbd1d618a2683474d8179ad4a67cbdeb40" ]] || { echo "couldnt checkout geth evmc6-static-hera branch!!"; exit 1; }

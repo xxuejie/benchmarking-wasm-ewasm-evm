@@ -54,6 +54,7 @@ RUN pip3 install durationpy jinja2 pandas
 
 RUN mkdir -p /evmraceresults
 COPY ./evmrace /evmrace
+COPY ./inputvectors /evmrace/inputvectors
 COPY ./meterracer /meterracer
 RUN chmod +x /meterracer/*.sh
 WORKDIR /evmrace
