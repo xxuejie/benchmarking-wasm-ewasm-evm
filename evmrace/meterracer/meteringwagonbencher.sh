@@ -61,7 +61,7 @@ do
   echo "benchmarking ${meteredfiletypes[i]} on geth wagon..."
 
   cd /meterracer
-  csvname="${CSV_FILE}"
+  csvname=${CSV_FILE}
   rungocmd="python3 rungethwagonbench.py --wasm_dir=\"${WASM_PATH}\" --name_suffix=\"${meteringsuffixes[i]}\" --csv_name=\"${csvname}\""
 
   for j in "${!wasmfiles[@]}"
