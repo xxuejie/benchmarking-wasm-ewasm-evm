@@ -20,7 +20,7 @@ git remote add cdetrio https://github.com/cdetrio/go-ethereum.git
 git fetch cdetrio
 git checkout ewasm-metering-bench
 
-[[ $(git log -1) =~ "31c3d4d08dee98a740d0c0db3b76fb0b54cf9c57" ]] || { echo "couldnt checkout geth ewasm-metering-bench branch!!"; exit 1; }
+[[ $(git log -1) =~ "48698e396e92c10041bddeee02122a79d0173709" ]] || { echo "couldnt checkout geth ewasm-metering-bench branch!!"; exit 1; }
 
 #### *** note if wasm files are size optimized or not
 

@@ -52,7 +52,7 @@ do
   jsonfile="/evmrace/inputvectors/${functionnames[i]}-inputs.json"
   for j in "${!meteringtypes[@]}"
   do
-    echo "benchmarking ${functionnames[i]} for metered type ${meteringtypes[j]} on geth hera..."
+    echo "benchmarking ${functionnames[i]} for metering type ${meteringtypes[j]} on geth hera..."
     wasmfile="${WASM_PATH}${functionfiles[i]}_${meteringtypes[j]}.wasm"
 
     gethherabenchcmd="python3 runherav8bench.py --testvectors=${jsonfile} --csvfile=${CSV_FILE} --testsuffix=\"${meteringsuffixes[j]}\" --wasmfile=${wasmfile}"
