@@ -78,10 +78,12 @@ def saveResults(precompile_benchmarks, result_file):
   # the hera and v8 metering results have these columns:
   #fieldnames = ['engine', 'test_name', 'total_time', 'compile_time', 'exec_time']
 
+  fieldnames = ['engine', 'test_name', 'gas', 'time']
+
   if not os.path.isfile(result_file):
     # write header if new file
     with open(result_file, 'w', newline='') as bench_result_file:
-      fieldnames = ['engine', 'test_name', 'gas', 'time']
+
       writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
       writer.writeheader()
 
