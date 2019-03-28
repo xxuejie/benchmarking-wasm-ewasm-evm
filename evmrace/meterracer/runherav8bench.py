@@ -39,7 +39,7 @@ def saveResults(benchmark_results, result_file):
 
   # should engine be concatenated into the test_name?  no - engine should be a different column
   # instantiate_time is name for compile time or parse/decode time
-  fieldnames = ['engine', 'test_name', 'total_time', 'compile_time', 'exec_time']
+  fieldnames = ['engine', 'test_name', 'total_time', 'compile_time', 'exec_time', 'gas_used', 'gas_calls']
 
   if not os.path.isfile(result_file):
     # write header if new file
@@ -51,13 +51,21 @@ def saveResults(benchmark_results, result_file):
   with open(result_file, 'a', newline='') as bench_result_file:
     writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
     for test_result in benchmark_results:
+      gas_used = -1
+      gas_calls = -1
+      if 'gas_used' in test_result:
+        gas_used = test_result['gas_used']
+      if 'gas_calls' in test_result:
+        gas_calls = test_result['gas_calls']
       writer.writerow({
                         "engine": test_result['engine'],
                         "test_name" : test_result['test_name'],
                         #"gas" : test_result['gas'],
                         "total_time" : test_result['total_time'],
                         "compile_time": test_result['compile_time'],
-                        "exec_time": test_result['exec_time']
+                        "exec_time": test_result['exec_time'],
+                        "gas_used": gas_used,
+                        "gas_calls": gas_calls
                       })
 
 
@@ -75,6 +83,8 @@ def parse_node_v8_output(stdoutlines):
     #print("parsing node v8 bench output for {}".format(testname))
     instantiateRegex = "instantiate: ([\w\.]+)"
     execRegex = "exec: ([\w\.]+)"
+    gasUsedRegex = "gas used: (\d+)"
+    gasCallsRegex = "useGas calls: (\d+)"
     #gasRegex = "gas used: ([\d]+)"
 
     # TODO: check for fail
@@ -89,10 +99,20 @@ def parse_node_v8_output(stdoutlines):
     exec_time = durationpy.from_str(exec_time)
     total_time = compile_time.total_seconds() + exec_time.total_seconds()
 
+    gas_used_line = stdoutlines[-2]
+    gas_calls_line = stdoutlines[-1]
+    gas_used_match = re.search(gasUsedRegex, gas_used_line)
+    gas_calls_match = re.search(gasCallsRegex, gas_calls_line)
+    gas_used = gas_used_match.group(1)
+    gas_calls = gas_calls_match.group(1)
+
+
     bench_run = {
       'total_time': total_time,
       'compile_time': compile_time.total_seconds(),
-      'exec_time': exec_time.total_seconds()
+      'exec_time': exec_time.total_seconds(),
+      'gas_used': gas_used,
+      'gas_calls': gas_calls
     }
 
     return bench_run
@@ -127,8 +147,8 @@ def do_node_v8_bench(wasmfile, input, expected):
   repetitions = round(60 / duration)
   if repetitions < 3:
     repetitions = 3 # minimum
-  if repetitions > 50:
-    repetitions = 50 # maximum
+  if repetitions > 150:
+    repetitions = 150 # maximum
 
   for i in range(repetitions - 1):
     print("run {} of {} for node v8...".format(i + 2, repetitions))
@@ -250,9 +270,15 @@ def doBenchInput(wasmfile, testname, input, expected):
   for engine in HERA_ENGINES:
     print("doing engine: {}".format(engine))
     #go_bench_cmd =  "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --benchtime 7s --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(engine)
+
     # use default benchtime because for fast ones we get too much output from hera on stdout
-    # TODO: if engine is wavm, run for longer time
-    go_bench_cmd =  "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(engine)
+    bench_time = ""
+
+    # wavm needs longer runtime because the compile time is long, so we only get a few iterations.
+    if engine == "wavm":
+      bench_time = "-benchtime 30s"
+
+    go_bench_cmd = "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm {} --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(bench_time, engine)
     go_bench_cmd = go_bench_cmd + " --ewasmfile=\"{}\" --input=\"{}\" --expected=\"{}\"".format(wasmfile, input, expected)
     bench_output = run_go_bench_cmd(go_bench_cmd)
     bench_runs = parse_go_bench_output(bench_output, testname)
@@ -279,7 +305,9 @@ def doBenchInput(wasmfile, testname, input, expected):
       'test_name': testname,
       'total_time': run['total_time'],
       'compile_time': run['compile_time'],
-      'exec_time': run['exec_time']
+      'exec_time': run['exec_time'],
+      'gas_used': run['gas_used'],
+      'gas_calls': run['gas_calls']
     }
     node_results.append(node_bench_run)
   # done with node
