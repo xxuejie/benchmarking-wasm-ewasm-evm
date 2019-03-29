@@ -276,7 +276,9 @@ def doBenchInput(wasmfile, testname, input, expected):
 
     # wavm needs longer runtime because the compile time is long, so we only get a few iterations.
     if engine == "wavm":
-      bench_time = "-benchtime 30s"
+      bench_time = "-benchtime 60s"
+    if engine == "wabt":
+      bench_time = "-benchtime 10s"
 
     go_bench_cmd = "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm {} --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(bench_time, engine)
     go_bench_cmd = go_bench_cmd + " --ewasmfile=\"{}\" --input=\"{}\" --expected=\"{}\"".format(wasmfile, input, expected)
