@@ -1,9 +1,13 @@
 
 echo "installing chisel..."
 cd /root
+
+# need to remove before installing, otherwise "invalid argument" error likely to occur
+rm /root/.cargo/bin/chisel
 # chisel needed to make ewasm-precompiles
 cargo install --version 0.1.0 chisel
 # new version 0.2.0 not working
+
 
 # chisel has broken before, when installed more than once
 # it returns invalid argument
@@ -13,6 +17,12 @@ cargo install --version 0.1.0 chisel
 
 #root@cb198feb896c:~# ls -al /root/.cargo/bin/chisel
 #-rwxr-xr-x 1 root root 2750288 Mar 26 22:24 /root/.cargo/bin/chisel
+
+## corrupted chisel binary:
+#root@c5653f6775a6:~/ewasm-precompiles# ls -al ~/.cargo/bin/chisel
+#-rwxr-xr-x 1 root root 2750288 Mar 28 17:43 /root/.cargo/bin/chisel
+# /bin/sh: 1: chisel: Invalid argument
+
 
 
 echo "compiling precompiles to wasm..."

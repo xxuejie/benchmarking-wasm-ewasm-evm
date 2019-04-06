@@ -147,8 +147,8 @@ def do_node_v8_bench(wasmfile, input, expected):
   repetitions = round(60 / duration)
   if repetitions < 3:
     repetitions = 3 # minimum
-  if repetitions > 150:
-    repetitions = 150 # maximum
+  if repetitions > 1000:
+    repetitions = 1000 # maximum
 
   for i in range(repetitions - 1):
     print("run {} of {} for node v8...".format(i + 2, repetitions))
@@ -279,6 +279,8 @@ def doBenchInput(wasmfile, testname, input, expected):
       bench_time = "-benchtime 60s"
     if engine == "wabt":
       bench_time = "-benchtime 10s"
+    if engine == "binaryen":
+      bench_time = "-benchtime 30s"
 
     go_bench_cmd = "go test -v ./core/vm/runtime/... -bench BenchmarkCallEwasm {} --vm.ewasm=\"/root/nofile,benchmark=true,engine={}\"".format(bench_time, engine)
     go_bench_cmd = go_bench_cmd + " --ewasmfile=\"{}\" --input=\"{}\" --expected=\"{}\"".format(wasmfile, input, expected)
