@@ -44,6 +44,9 @@ def do_rust_bench(benchname, input):
     rustsrc = "{}/rust-code".format(os.path.abspath(benchname))
     rusttemplate = "{}/src/bench.rs".format(rustsrc)
 
+    if not os.path.exists(rustsrc):
+        return False
+
     filldir = os.path.abspath("{}/rust-code-filled".format(benchname))
     if os.path.exists(filldir):
         shutil.rmtree(filldir)
@@ -217,20 +220,20 @@ def main():
     native_benchmarks = {}
     evm_benchmarks = {}
     for benchname in benchdirs:
-        if benchname == "__pycache__":
+        if benchname in ["__pycache__", "inputvectors"]:
             continue
         print("start benching: ", benchname)
-        #
-        # TODO: benchname-inputs.json has moved to /evmrace/inputvectors/benchname-inputs.json
-        #
-        with open("{}/{}-inputs.json".format(benchname, benchname)) as f:
+
+        with open("inputvectors/{}-inputs.json".format(benchname)) as f:
             bench_inputs = json.load(f)
             go_evm_plain_bench_info = get_go_evm_bench(benchname, shift_optimized=False)
             go_evm_shift_optimized_info = get_go_evm_bench(benchname, shift_optimized=True)
+
             for input in bench_inputs:
                 print("bench input:", input['name'])
                 native_input_times = do_rust_bench(benchname, input)
-                native_benchmarks[input['name']] = native_input_times
+                if native_input_times:
+                    native_benchmarks[input['name']] = native_input_times
 
                 # do plain test and shift_optimized_test
                 if go_evm_plain_bench_info:
