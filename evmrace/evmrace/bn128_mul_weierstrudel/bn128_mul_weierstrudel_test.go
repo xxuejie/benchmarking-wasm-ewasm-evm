@@ -78,11 +78,11 @@ function decodeJacobianResult(output) {
 
 	cfg.State.CreateAccount(address)
 	cfg.State.SetCode(address, code)
-	cfg.State.SetBalance(cfg.Origin, big.NewInt(1000000))
+	//cfg.State.SetBalance(cfg.Origin, big.NewInt(1000000))
 	//cfg.State.SetBalance(cfg.Origin, big.NewInt(0))
 
 	// master branch needs 1 wei value transfer
-	cfg.Value = big.NewInt(1)
+	//cfg.Value = big.NewInt(1)
 
 	var (
 		ret  []byte
