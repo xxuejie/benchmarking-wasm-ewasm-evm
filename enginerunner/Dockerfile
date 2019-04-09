@@ -142,8 +142,11 @@ RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
 
 
 # copy benchmarking scripts
+RUN mkdir /bencher
+COPY project /bencher/project
+COPY main.py /bencher
+
 RUN mkdir -p /testresults
-COPY ./bencher /bencher
 
 WORKDIR /bencher
 
