@@ -21,6 +21,7 @@ import subprocess
 #from subprocess import Popen
 from collections import defaultdict
 import logging
+# TODO: use nanodurationpy because asmble uses nanoseconds
 import durationpy
 import re
 import shlex
