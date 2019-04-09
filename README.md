@@ -1,7 +1,9 @@
 
 # benchmark wasm engines
 
-1. Prepare "standalone" wasm files. Wasm modules should export one function, `main`, which takes no input arguments and returns no result (this is for maximum compatibility with engines, which often don't support passing arguments to invoked functions).
+Engines benchmarked: asmble (compiler), life (interpreter), life-polymerase (compiler), v8-interpreter, v8-liftoff, v8-turbofan, wabt (interp), wagon (interp), wasmi (interp), wasmtime (compiler), wavm (compiler). Measures instantiation time (decode/instantiate for interpreters, decode/instantiate/compile for compilers) and execution time.
+
+1. Prepare "standalone" wasm files. Wasm modules should export one function, `main`, which takes no input arguments and returns no result (this is for maximum compatibility, as engines often don't support passing arguments to invoked functions without extra support from an embedder).
 
 2. build the `wasm-engines` docker container
 
