@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3.7
 
 from project.BenchTestGenerator import BenchTestGenerator
 from project.WasmVMBencher import WasmVMBencher
@@ -16,6 +16,8 @@ import shutil
 import glob
 
 sys.stdout.reconfigure(encoding='utf-8')
+# sys.stdout.reconfigure requires python 3.7
+# if not using python 3.7, then you you need `PYTHONIOENCODING=UTF-8 python3 main.py`
 
 OUT_DIR = "/testresults"
 
