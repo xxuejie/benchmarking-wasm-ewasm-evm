@@ -77,6 +77,16 @@ RUN cd node && ln -s /usr/local/bin/node ./node
 # /root/node is assumed by runherav8bench.py
 RUN ln -s /node/node /root/node
 
+
+# install evmone
+RUN rm -rf /root/evmone
+RUN git clone --recursive --single-branch --branch bench-evm-codes https://github.com/cdetrio/evmone
+RUN cd evmone && mkdir build
+RUN cd evmone/build && cmake .. -DEVMONE_TESTING=ON
+RUN cd evmone/build && cmake --build . -- -j
+# /root/evmone/build/test/evmone-bench
+
+
 RUN mkdir -p /evmraceresults
 COPY ./evmrace /evmrace
 COPY ./inputvectors /evmrace/inputvectors
