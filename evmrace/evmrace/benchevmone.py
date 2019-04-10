@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-import jinja2, json, re
-from functools import reduce
+import json, re
 import subprocess
 import nanodurationpy as durationpy
 import csv
@@ -9,7 +8,7 @@ import time
 import datetime
 import os
 import shutil
-import glob
+import shlex
 
 
 RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
@@ -41,8 +40,8 @@ def saveResults(evm_benchmarks):
             writer.writerow({"test_name" : test_name, "elapsed_time" : test_results['time'], "gas_used" : test_results['gasUsed']})
 
 
-def get_evmone_cmd(codefile, calldata, input):
-    cmd_str = "test/evmone-bench {} {} {} --benchmark_filter=bench_evm_code --benchmark_min_time=7".format(codefile, calldata, expected)
+def get_evmone_cmd(codefile, calldata, expected):
+    cmd_str = "test/evmone-bench {} {} {} --benchmark_color=false --benchmark_filter=bench_evm_code --benchmark_min_time=7".format(codefile, calldata, expected)
     return cmd_str
 
 
@@ -71,27 +70,26 @@ bench_evm_code        152 us        152 us       4694 gas_rate=241.788M/s gas_us
 """
 
 def do_evmone_bench(evmone_cmd):
-    print("running go benchmark {}...\n{}".format(input['name'], go_cmd))
-    evmone_process = subprocess.Popen(evmone_cmd, cwd=EVMONE_BUILD_DIR, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
-    evmone_process.wait(None)
-    stdoutlines = [str(line, 'utf8') for line in evmone_process.stdout]
-    print(("").join(stdoutlines), end="")
-
+    print("running evmone benchmark...\n{}\n".format(evmone_cmd))
     evmone_cmd = shlex.split(evmone_cmd)
-    raw_stdoutlines = []
+    stdoutlines = []
     with subprocess.Popen(evmone_cmd, cwd=EVMONE_BUILD_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True) as p:
         for line in p.stdout: # b'\n'-separated lines
             print(line, end='')
-            raw_stdoutlines.append(line)  # pass bytes as is
+            stdoutlines.append(line)  # pass bytes as is
         p.wait()
 
+    print("process finished.  got lines:", stdoutlines)
+    print("got lines length:", len(stdoutlines))
     timeregex = "bench_evm_code\s+(\d+) us"
     gasregex = "gas_used=([\d\.\w]+)"
     # maybe --benchmark_format=json is better so dont have to parse "36.775k"
     benchline = stdoutlines[-1]
+    print("benchline:", benchline)
     time_match = re.search(timeregex, benchline)
-    us_time = durationpy.from_str("{} us".format(time_match.group(1)))
-    gas_match = re.search("gasregex", benchline)
+    print("time_match:", time_match)
+    us_time = durationpy.from_str("{}us".format(time_match.group(1)))
+    gas_match = re.search(gasregex, benchline)
     gasused = gas_match.group(1)
     return {'gas_used': gasused, 'time': us_time.total_seconds()}
 
@@ -109,7 +107,14 @@ def main():
         print("start benching: ", codefile)
         codefilepath = os.path.join(EVM_CODE_DIR, codefile)
         benchname = codefile.replace(".hex", "")
-        with open("inputvectors/{}-inputs.json".format(benchname)) as f:
+        inputsfilename = benchname
+        if benchname.endswith("_shift"):
+            inputsfilename = benchname.replace("_shift", "")
+        if benchname.endswith("_weierstrudel"):
+            inputsfilename = inputsfilename
+        else:
+            inputsfilename = inputsfilename + "_evmone"
+        with open("inputvectors/{}-inputs.json".format(inputsfilename)) as f:
             bench_inputs = json.load(f)
             for input in bench_inputs:
                 print("bench input:", input['name'])
