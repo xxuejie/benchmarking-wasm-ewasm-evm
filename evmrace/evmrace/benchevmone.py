@@ -13,31 +13,26 @@ import shlex
 
 RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
-
 EVM_CODE_DIR = "/evmrace/evmcode"
 
 EVMONE_BUILD_DIR = "/root/evmone/build"
 
 
 def saveResults(evm_benchmarks):
-    # move existing files to old-datetime-folder
-    ts = time.time()
-    date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
-    ts_folder_name = "{}-{}".format(date_str, round(ts))
-    dest_backup_path = os.path.join(RESULT_CSV_OUTPUT_PATH, ts_folder_name)
-    os.makedirs(dest_backup_path)
-    for file in glob.glob(r"{}/*.csv".format(RESULT_CSV_OUTPUT_PATH)):
-        print("backing up existing {}".format(file))
-        shutil.move(file, dest_backup_path)
-    print("existing csv files backed up to {}".format(dest_backup_path))
+    fieldnames = ['engine', 'test_name', 'total_time', 'gas_used']
+    result_file = "{}/evm_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
 
-    evm_file = "{}/evm_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
-    with open(evm_file, 'w', newline='') as bench_result_file:
-        fieldnames = ['test_name', 'elapsed_time', 'gas_used']
+    # write header if new file
+    if not os.path.isfile(result_file):
+        with open(result_file, 'w', newline='') as bench_result_file:
+            writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
+            writer.writeheader()
+
+    # append to existing file
+    with open(result_file, 'a', newline='') as bench_result_file:
         writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
-        writer.writeheader()
-        for test_name, test_results in evm_benchmarks.items():
-            writer.writerow({"test_name" : test_name, "elapsed_time" : test_results['time'], "gas_used" : test_results['gasUsed']})
+        for row in evm_benchmarks:
+            writer.writerow(row)
 
 
 def get_evmone_cmd(codefile, calldata, expected):
@@ -90,13 +85,7 @@ def do_evmone_bench(evmone_cmd):
     return {'gas_used': gasused, 'time': us_time.total_seconds()}
 
 
-
-
 def main():
-    #evmcodefiles = []
-    #for filename in os.listdir('./evmcode'):
-    #    if filename.endswith(".hex"):
-    #        evmcodefiles.append(filename)
     evmcodefiles = [fname for fname in os.listdir(EVM_CODE_DIR) if fname.endswith(".hex")]
     evm_benchmarks = []
     for codefile in evmcodefiles:
@@ -127,7 +116,7 @@ def main():
                 bench_result = {}
                 bench_result['engine'] = "evmone"
                 bench_result['test_name'] = test_name
-                bench_result['time'] = evmone_bench_result['time']
+                bench_result['total_time'] = evmone_bench_result['time']
                 bench_result['gas_used'] = evmone_bench_result['gas_used']
                 evm_benchmarks.append(bench_result)
 
@@ -137,7 +126,7 @@ def main():
 
     print("got evm_benchmarks:", evm_benchmarks)
 
-    #saveResults(evm_benchmarks)
+    saveResults(evm_benchmarks)
 
 if __name__ == "__main__":
     main()

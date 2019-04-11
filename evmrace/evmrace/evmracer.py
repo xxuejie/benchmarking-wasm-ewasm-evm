@@ -208,11 +208,11 @@ def saveResults(native_benchmarks, evm_benchmarks):
 
     evm_file = "{}/evm_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
     with open(evm_file, 'w', newline='') as bench_result_file:
-        fieldnames = ['test_name', 'elapsed_time', 'gas_used']
+        fieldnames = ['engine', 'test_name', 'total_time', 'gas_used']
         writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
         writer.writeheader()
         for test_name, test_results in evm_benchmarks.items():
-            writer.writerow({"test_name" : test_name, "elapsed_time" : test_results['time'], "gas_used" : test_results['gasUsed']})
+            writer.writerow({"engine": "geth-evm", "test_name" : test_name, "total_time" : test_results['time'], "gas_used" : test_results['gasUsed']})
 
 
 def main():
@@ -245,7 +245,7 @@ def main():
                     evm_benchmarks[result_name] = plain_evm_times
                 if go_evm_shift_optimized_info:
                     #result_name = go_evm_shift_optimized_info['result_name']
-                    result_name = input['name'] + "-shift-optimized"
+                    result_name = input['name'] + "-shiftopt"
                     go_cmd = go_evm_shift_optimized_info['go_cmd']
                     go_bench_file = go_evm_shift_optimized_info['go_bench_file']
                     shift_optimized_evm_times = do_go_evm_bench(benchname, go_cmd, go_bench_file, input)
