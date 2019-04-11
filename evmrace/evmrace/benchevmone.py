@@ -79,15 +79,11 @@ def do_evmone_bench(evmone_cmd):
             stdoutlines.append(line)  # pass bytes as is
         p.wait()
 
-    print("process finished.  got lines:", stdoutlines)
-    print("got lines length:", len(stdoutlines))
     timeregex = "bench_evm_code\s+(\d+) us"
     gasregex = "gas_used=([\d\.\w]+)"
     # maybe --benchmark_format=json is better so dont have to parse "36.775k"
     benchline = stdoutlines[-1]
-    print("benchline:", benchline)
     time_match = re.search(timeregex, benchline)
-    print("time_match:", time_match)
     us_time = durationpy.from_str("{}us".format(time_match.group(1)))
     gas_match = re.search(gasregex, benchline)
     gasused = gas_match.group(1)
@@ -108,8 +104,10 @@ def main():
         codefilepath = os.path.join(EVM_CODE_DIR, codefile)
         benchname = codefile.replace(".hex", "")
         inputsfilename = benchname
+        shift_suffix = ""
         if benchname.endswith("_shift"):
             inputsfilename = benchname.replace("_shift", "")
+            shift_suffix = "-shiftopt"
         if benchname.endswith("_weierstrudel"):
             inputsfilename = inputsfilename
         else:
@@ -122,18 +120,18 @@ def main():
                 expected = input['expected']
                 evmone_bench_cmd = get_evmone_cmd(codefilepath, calldata, expected)
                 evmone_bench_result = do_evmone_bench(evmone_bench_cmd)
-
+                test_name = input['name'] + shift_suffix
                 # evm_benchmarks[input['name']] = evmone_bench_result
                 print("got evmone_bench_result:", evmone_bench_result)
-                
+
                 bench_result = {}
                 bench_result['engine'] = "evmone"
-                bench_result['test_name'] = input['name']
+                bench_result['test_name'] = test_name
                 bench_result['time'] = evmone_bench_result['time']
                 bench_result['gas_used'] = evmone_bench_result['gas_used']
                 evm_benchmarks.append(bench_result)
 
-                print("done with input:", input['name'])
+                print("done with input:", test_name)
 
         print("done benching: ", benchname)
 
