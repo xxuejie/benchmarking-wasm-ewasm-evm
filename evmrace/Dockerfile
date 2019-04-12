@@ -80,6 +80,11 @@ RUN cd evmone/build && cmake --build . -- -j
 # /root/evmone/build/test/evmone-bench
 
 
+# install parity-evm
+RUN git clone --recursive --single-branch --branch evm-code-bencher https://github.com/cdetrio/parity
+RUN cd parity/evmbin && cargo build --release
+# /root/parity/target/release/parity-evm
+
 WORKDIR /
 RUN mkdir -p /evmraceresults
 COPY ./evmrace /evmrace

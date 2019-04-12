@@ -17,6 +17,8 @@ EVM_CODE_DIR = "/evmrace/evmcode"
 
 EVMONE_BUILD_DIR = "/root/evmone/build"
 
+PARITY_EVM_DIR = "/root/parity/target/release"
+
 
 def saveResults(evm_benchmarks):
     fieldnames = ['engine', 'test_name', 'total_time', 'gas_used']
@@ -33,6 +35,41 @@ def saveResults(evm_benchmarks):
         writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
         for row in evm_benchmarks:
             writer.writerow(row)
+
+
+def get_parity_cmd(codefile, calldata, expected):
+    cmd_str = "./parity-evm --code-file {} --input {} --expected {} ".format(codefile, calldata, expected)
+    return cmd_str
+
+"""
+~/parity# ./target/release/parity-evm --code-file ./bn128mul.evm --input 039730ea8dff1254c0fee9c0ea777d29a9c710b7e616683f194f18c43b43b869073a5ffcc6fc7a28c30723d6e58ce577356982d65b833a5a5c15bf9024b43d98ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff --expected "0e9c28772a2a79561257f998c9c31e9b47bb592d54b6936bc00066453f50b27816c1cda062bd6cc07463ba71ff1d299223dd1bb9a6ac5cfe1d57a19c87a229e029a4b5947ed4dca6df8349674078a9b3ea3d06b4373d9d7a50866f3de054285d"
+code_hex length: 29317
+return_data: "0e9c28772a2a79561257f998c9c31e9b47bb592d54b6936bc00066453f50b27816c1cda062bd6cc07463ba71ff1d299223dd1bb9a6ac5cfe1d57a19c87a229e029a4b5947ed4dca6df8349674078a9b3ea3d06b4373d9d7a50866f3de054285d"
+gas used: 47561
+code avg run time: 12.059442ms
+"""
+
+def do_parity_bench(parity_cmd):
+    print("running parity-evm benchmark...\n{}\n".format(parity_cmd))
+    parity_cmd = shlex.split(parity_cmd)
+    stdoutlines = []
+    with subprocess.Popen(parity_cmd, cwd=PARITY_EVM_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True) as p:
+        for line in p.stdout: # b'\n'-separated lines
+            print(line, end='')
+            stdoutlines.append(line)  # pass bytes as is
+        p.wait()
+
+    timeregex = "code avg run time: ([\d\w\.]+)"
+    gasregex = "gas used: (\d+)"
+    # maybe --benchmark_format=json is better so dont have to parse "36.775k"
+    time_line = stdoutlines[-1]
+    gas_line = stdoutlines[-2]
+    time_match = re.search(timeregex, time_line)
+    time = durationpy.from_str(time_match.group(1))
+    gas_match = re.search(gasregex, gas_line)
+    gasused = gas_match.group(1)
+    return {'gas_used': gasused, 'time': time.total_seconds()}
+
 
 
 def get_evmone_cmd(codefile, calldata, expected):
@@ -113,12 +150,21 @@ def main():
                 # evm_benchmarks[input['name']] = evmone_bench_result
                 print("got evmone_bench_result:", evmone_bench_result)
 
-                bench_result = {}
-                bench_result['engine'] = "evmone"
-                bench_result['test_name'] = test_name
-                bench_result['total_time'] = evmone_bench_result['time']
-                bench_result['gas_used'] = evmone_bench_result['gas_used']
-                evm_benchmarks.append(bench_result)
+                evmone_result = {}
+                evmone_result['engine'] = "evmone"
+                evmone_result['test_name'] = test_name
+                evmone_result['total_time'] = evmone_bench_result['time']
+                evmone_result['gas_used'] = evmone_bench_result['gas_used']
+                evm_benchmarks.append(evmone_result)
+
+                parity_bench_cmd = get_parity_cmd(codefilepath, calldata, expected)
+                parity_bench_result = do_parity_bench(parity_bench_cmd)
+                parity_result = {}
+                parity_result['engine'] = "parity-evm"
+                parity_result['test_name'] = test_name
+                parity_result['total_time'] = parity_bench_result['time']
+                parity_result['gas_used'] = parity_bench_result['gas_used']
+                evm_benchmarks.append(parity_result)
 
                 print("done with input:", test_name)
 
