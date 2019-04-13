@@ -19,6 +19,8 @@ EVMONE_BUILD_DIR = "/root/evmone/build"
 
 PARITY_EVM_DIR = "/root/parity/target/release"
 
+GETH_EVM_DIR = "/root/go/src/github.com/ethereum/go-ethereum/core/vm/runtime"
+
 
 def saveResults(evm_benchmarks):
     fieldnames = ['engine', 'test_name', 'total_time', 'gas_used']
@@ -35,6 +37,65 @@ def saveResults(evm_benchmarks):
         writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
         for row in evm_benchmarks:
             writer.writerow(row)
+
+
+def get_geth_cmd(codefile, calldata, expected):
+    cmd_str = "go test -v -bench BenchmarkEvmCode --codefile {} --input {} --expected {}".format(codefile, calldata, expected)
+    return cmd_str
+
+
+"""
+runtime mbpro$ go test -v -bench BenchmarkEvmCode --codefile /root/bn128mul.evm --input 039730ea8dff1254c0fee9c0ea777d29a9c710b7e616683f194f18c43b43b869073a5ffcc6fc7a28c30723d6e58ce577356982d65b833a5a5c15bf9024b43d98ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff --expected 0e9c28772a2a79561257f998c9c31e9b47bb592d54b6936bc00066453f50b27816c1cda062bd6cc07463ba71ff1d299223dd1bb9a6ac5cfe1d57a19c87a229e029a4b5947ed4dca6df8349674078a9b3ea3d06b4373d9d7a50866f3de054285d
+=== RUN   TestDefaults
+--- PASS: TestDefaults (0.00s)
+=== RUN   TestEVM
+--- PASS: TestEVM (0.00s)
+=== RUN   TestExecute
+--- PASS: TestExecute (0.00s)
+=== RUN   TestCall
+--- PASS: TestCall (0.00s)
+=== RUN   ExampleExecute
+--- PASS: ExampleExecute (0.00s)
+codefile: /root/bn128mul.evm
+code hex length: 29317
+got return bytes: 0e9c28772a2a79561257f998c9c31e9b47bb592d54b6936bc00066453f50b27816c1cda062bd6cc07463ba71ff1d299223dd1bb9a6ac5cfe1d57a19c87a229e029a4b5947ed4dca6df8349674078a9b3ea3d06b4373d9d7a50866f3de054285d
+gasUsed: 47561
+goos: darwin
+goarch: amd64
+pkg: github.com/ethereum/go-ethereum/core/vm/runtime
+BenchmarkEvmCode-12    	codefile: /root/bn128mul.evm
+code hex length: 29317
+got return bytes: 0e9c28772a2a79561257f998c9c31e9b47bb592d54b6936bc00066453f50b27816c1cda062bd6cc07463ba71ff1d299223dd1bb9a6ac5cfe1d57a19c87a229e029a4b5947ed4dca6df8349674078a9b3ea3d06b4373d9d7a50866f3de054285d
+gasUsed: 47561
+codefile: /root/bn128mul.evm
+code hex length: 29317
+got return bytes: 0e9c28772a2a79561257f998c9c31e9b47bb592d54b6936bc00066453f50b27816c1cda062bd6cc07463ba71ff1d299223dd1bb9a6ac5cfe1d57a19c87a229e029a4b5947ed4dca6df8349674078a9b3ea3d06b4373d9d7a50866f3de054285d
+gasUsed: 47561
+    1000	   1363188 ns/op
+PASS
+ok  	github.com/ethereum/go-ethereum/core/vm/runtime	2.847s
+"""
+
+def do_geth_bench(geth_cmd):
+    print("running geth-evm benchmark...\n{}\n".format(geth_cmd))
+    geth_cmd = shlex.split(geth_cmd)
+    stdoutlines = []
+    with subprocess.Popen(geth_cmd, cwd=GETH_EVM_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True) as p:
+        for line in p.stdout: # b'\n'-separated lines
+            print(line, end='')
+            stdoutlines.append(line)  # pass bytes as is
+        p.wait()
+
+    nsOpRegex = "\d+\s+([\d]+) ns\/op"
+    gasregex = "gasUsed: (\d+)"
+    # maybe --benchmark_format=json is better so dont have to parse "36.775k"
+    time_line = stdoutlines[-3]
+    gas_line = stdoutlines[-4]
+    time_match = re.search(nsOpRegex, time_line)
+    time = durationpy.from_str("{}ns".format(time_match.group(1)))
+    gas_match = re.search(gasregex, gas_line)
+    gasused = gas_match.group(1)
+    return {'gas_used': gasused, 'time': time.total_seconds()}
 
 
 def get_parity_cmd(codefile, calldata, expected):
@@ -165,6 +226,15 @@ def main():
                 parity_result['total_time'] = parity_bench_result['time']
                 parity_result['gas_used'] = parity_bench_result['gas_used']
                 evm_benchmarks.append(parity_result)
+
+                geth_bench_cmd = get_geth_cmd(codefilepath, calldata, expected)
+                geth_bench_result = do_geth_bench(geth_bench_cmd)
+                geth_result = {}
+                geth_result['engine'] = "geth-evm"
+                geth_result['test_name'] = test_name
+                geth_result['total_time'] = geth_bench_result['time']
+                geth_result['gas_used'] = geth_bench_result['gas_used']
+                evm_benchmarks.append(geth_result)
 
                 print("done with input:", test_name)
 
