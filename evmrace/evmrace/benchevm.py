@@ -23,8 +23,23 @@ GETH_EVM_DIR = "/root/go/src/github.com/ethereum/go-ethereum/core/vm/runtime"
 
 
 def saveResults(evm_benchmarks):
+    result_file = os.path.join(RESULT_CSV_OUTPUT_PATH, "evm_benchmarks.csv")
+
+    # move existing files to old-datetime-folder
+    ts = time.time()
+    date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+    ts_folder_name = "{}-{}".format(date_str, round(ts))
+    dest_backup_path = os.path.join(RESULT_CSV_OUTPUT_PATH, ts_folder_name)
+    os.makedirs(dest_backup_path)
+    #for file in glob.glob(r"{}/*.csv".format(RESULT_CSV_OUTPUT_PATH)):
+    if os.path.isfile(result_file):
+        print("backing up existing {}".format(result_file))
+        shutil.move(result_file, dest_backup_path)
+    print("existing csv files backed up to {}".format(dest_backup_path))
+    # will always be a new file after this.
+    # might move this backup routine to a bash script
+
     fieldnames = ['engine', 'test_name', 'total_time', 'gas_used']
-    result_file = "{}/evm_benchmarks.csv".format(RESULT_CSV_OUTPUT_PATH)
 
     # write header if new file
     if not os.path.isfile(result_file):
