@@ -12,7 +12,7 @@ version = "^0.5.5"
 [patch.crates-io]
 # needed to prevent wasm target error from "same-file" crate, a dependency of criterion
 # https://github.com/BurntSushi/same-file/issues/42
-criterion = { path = "../crate-override"} 
+criterion = { path = "./crate-override"} 
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 wee_alloc = "0.4.2"

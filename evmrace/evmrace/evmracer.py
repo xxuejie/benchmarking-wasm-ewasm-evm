@@ -15,6 +15,8 @@ import glob
 WASM_FILE_OUTPUT_PATH = "/evmwasmfiles"
 RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
+RUST_CODES_DIR = "../rust-code"
+
 RESULT_CSV_FILENAME = "native_benchmarks.csv"
 
 # how many times to run native exec
@@ -43,13 +45,18 @@ def bench_rust_binary(rustdir, input_name, native_exec):
 
 def do_rust_bench(benchname, input):
     #rustsrc = "{}/rust-code/src/bench.rs".format(os.path.abspath(benchname))
-    rustsrc = "{}/rust-code".format(os.path.abspath(benchname))
-    rusttemplate = "{}/src/bench.rs".format(rustsrc)
+    #rustsrc = "{}/rust-code".format(os.path.abspath(benchname))
+    rust_code_path = os.path.abspath(os.path.join(RUST_CODES_DIR, benchname))
+    #rustsrc = "{}/rust-code".format(os.path.abspath(benchname))
+    rustsrc = rust_code_path
+    #rusttemplate = "{}/src/bench.rs".format(rustsrc)
+    rusttemplate = os.path.join(rust_code_path, "src/bench.rs")
 
     if not os.path.exists(rustsrc):
         return False
 
-    filldir = os.path.abspath("{}/rust-code-filled".format(benchname))
+    #filldir = os.path.abspath("{}/rust-code-filled".format(benchname))
+    filldir = os.path.abspath(os.path.join("./rust-code-filled/", benchname))
     if os.path.exists(filldir):
         shutil.rmtree(filldir)
     shutil.copytree(rustsrc, filldir)
@@ -76,7 +83,8 @@ def do_rust_bench(benchname, input):
             template = jinja2.Template(file_.read())
             filledrust = template.render(**template_args)
 
-        rustfileout = "{}/src/bench.rs".format(filldir)
+        #rustfileout = "{}/src/bench.rs".format(filldir)
+        rustfileout = os.path.join(filldir, "src/bench.rs")
         with open(rustfileout, 'w') as outfile:
             outfile.write(filledrust)
 
@@ -145,12 +153,15 @@ def saveResults(native_benchmarks):
 
 
 def main():
-    benchdirs = [dI for dI in os.listdir('./') if os.path.isdir(os.path.join('./',dI))]
+    rustcodes = [dI for dI in os.listdir(RUST_CODES_DIR) if os.path.isdir(os.path.join(RUST_CODES_DIR,dI))]
+    #benchdirs = [dI for dI in os.listdir('./') if os.path.isdir(os.path.join('./',dI))]
     native_benchmarks = {}
-    for benchname in benchdirs:
+    for benchname in rustcodes:
         if benchname in ["__pycache__", "inputvectors", "evmcode"]:
             continue
         print("start benching: ", benchname)
+
+        #rust_code_path = os.path.join(RUST_CODES_DIR, benchname)
 
         with open("inputvectors/{}-inputs.json".format(benchname)) as f:
             bench_inputs = json.load(f)
