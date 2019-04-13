@@ -15,7 +15,7 @@ import glob
 WASM_FILE_OUTPUT_PATH = "/evmwasmfiles"
 RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
-RUST_CODES_DIR = "../rust-code"
+RUST_CODES_DIR = "./rust-code"
 
 RESULT_CSV_FILENAME = "native_benchmarks.csv"
 

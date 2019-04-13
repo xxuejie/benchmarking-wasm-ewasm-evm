@@ -101,6 +101,7 @@ WORKDIR /
 RUN mkdir -p /evmraceresults
 COPY ./evmrace /evmrace
 COPY ./inputvectors /evmrace/inputvectors
+COPY ./rust-code /evmrace/rust-code
 COPY ./evmcode /evmrace/evmcode
 COPY ./meterracer /meterracer
 RUN chmod +x /meterracer/*.sh

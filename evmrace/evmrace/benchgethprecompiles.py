@@ -144,6 +144,9 @@ def main():
     bench_output = do_go_precompile_bench()
     bench_results = parse_go_bench_output(bench_output)
     print("got precompile benchmarks:", bench_results)
+
+    # TODO: bench parity precompiles
+
     saveResults(bench_results)
 
 
