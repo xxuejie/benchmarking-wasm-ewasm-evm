@@ -33,12 +33,17 @@ RUN rustup target add wasm32-unknown-unknown
 RUN add-apt-repository ppa:longsleep/golang-backports && apt-get update && apt-get install -y golang-go
 
 
-# download geth
+
+# install geth
+RUN rm -rf /root/go/src/github.com/ethereum/go-ethereum
 RUN go get -u -v github.com/ethereum/go-ethereum
-RUN cd /root/go/src/github.com/ethereum/go-ethereum && git checkout v1.8.23
+# RUN cd /root/go/src/github.com/ethereum/go-ethereum && git checkout v1.8.23
+RUN cd /root/go/src/github.com/ethereum/go-ethereum && git remote add cdetrio https://github.com/cdetrio/go-ethereum.git
+RUN cd /root/go/src/github.com/ethereum/go-ethereum && git fetch cdetrio
+RUN cd /root/go/src/github.com/ethereum/go-ethereum && git checkout evm-code-bencher
+RUN rm /go-ethereum
 RUN ln -s /root/go/src/github.com/ethereum/go-ethereum /go-ethereum
-#COPY ./sha1_test.go /go-ethereum/core/vm/runtime/sha_test.go
-#RUN cd /go-ethereum/core/vm/runtime && go test -bench BenchmarkSHA1 -benchtime 5s
+# cd /go-ethereum/core/vm/runtime && go test -bench BenchmarkEvmCode -benchtime 5s
 
 
 # install python modules needed for benchmarking script
@@ -90,16 +95,6 @@ RUN apt-get update
 RUN apt-get install -y libudev-dev
 # cd /root/parity/ && cargo bench -p ethcore
 
-
-# install geth
-RUN rm -rf /root/go/src/github.com/ethereum/go-ethereum
-RUN go get -u -v github.com/ethereum/go-ethereum
-RUN cd /root/go/src/github.com/ethereum/go-ethereum && git remote add cdetrio https://github.com/cdetrio/go-ethereum.git
-RUN cd /root/go/src/github.com/ethereum/go-ethereum && git fetch cdetrio
-RUN cd /root/go/src/github.com/ethereum/go-ethereum && git checkout evm-code-bencher
-RUN rm /go-ethereum
-RUN ln -s /root/go/src/github.com/ethereum/go-ethereum /go-ethereum
-# cd /go-ethereum/core/vm/runtime && go test -bench BenchmarkEvmCode -benchtime 5s
 
 
 WORKDIR /
