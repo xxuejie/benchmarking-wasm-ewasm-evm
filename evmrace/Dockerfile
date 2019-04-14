@@ -85,6 +85,11 @@ RUN git clone --recursive --single-branch --branch evm-code-bencher https://gith
 RUN cd parity/evmbin && cargo build --release
 # /root/parity/target/release/parity-evm
 
+# deps required to build full parity for native precompile benchmarks
+RUN apt-get update
+RUN apt-get install -y libudev-dev
+# cd /root/parity/ && cargo bench -p ethcore
+
 
 # install geth
 RUN rm -rf /root/go/src/github.com/ethereum/go-ethereum
@@ -103,6 +108,7 @@ COPY ./evmrace /evmrace
 COPY ./inputvectors /evmrace/inputvectors
 COPY ./rust-code /evmrace/rust-code
 COPY ./evmcode /evmrace/evmcode
+COPY ./ewasm-code /evmrace/ewasm-code
 COPY ./meterracer /meterracer
 RUN chmod +x /meterracer/*.sh
 
