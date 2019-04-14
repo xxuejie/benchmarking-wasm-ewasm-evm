@@ -14,47 +14,60 @@ import time
 import datetime
 import shutil
 import glob
+import argparse, sys
 
 sys.stdout.reconfigure(encoding='utf-8')
 # sys.stdout.reconfigure requires python 3.7
 # if not using python 3.7, then you you need `PYTHONIOENCODING=UTF-8 python3 main.py`
 
-OUT_DIR = "/testresults"
+
+BLACKLIST = []
 
 
-WASM_FILE_PATH = '/wasmfiles'
+parser = argparse.ArgumentParser()
+parser.add_argument('--wasmdir', help='full path of dir containing wasm files')
+parser.add_argument('--csvfile', help='name of csv result file')
+parser.add_argument('--engines', help='comma-separated list of engines to benchmark')
 
-BLACKLIST = ['ecpairing.wasm', 'guido-fuzzer-find-2-norotates.wasm', 'guido-fuzzer-find-1.wasm', 'guido-fuzzer-find-2.wasm']
+args = vars(parser.parse_args())
 
-def getTestDescriptors():
+
+def getTestDescriptors(wasm_dir):
     test_descriptors = {}
-    for filename in os.listdir(WASM_FILE_PATH):
+    for filename in os.listdir(wasm_dir):
         if filename.endswith(".wasm") and filename not in BLACKLIST:
-            test_descriptors[filename[:-5]] = WASM_FILE_PATH + "/" + filename
+            test_name = filename[:-5] # file name without .wasm
+            test_descriptors[test_name] = os.path.join(wasm_dir, filename)
     return test_descriptors
 
 
-def save_test_results(out_dir, results):
+def save_test_results(result_file, results):
     # move existing files to old-datetime-folder
-    ts = time.time()
-    date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
-    ts_folder_name = "{}-{}".format(date_str, round(ts))
-    dest_backup_path = os.path.join(out_dir, ts_folder_name)
-    os.makedirs(dest_backup_path)
-    for file in glob.glob(r"{}/*.csv".format(out_dir)):
-        print("backing up existing {}".format(file))
-        shutil.move(file, dest_backup_path)
-    print("existing csv files backed up to {}".format(dest_backup_path))
+    if os.path.isfile(result_file):
+        print("backing up existing {}".format(result_file))
+        ts = time.time()
+        date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+        ts_folder_name = "{}-{}".format(date_str, round(ts))
+        out_dir = os.path.dirname(result_file)
+        dest_backup_path = os.path.join(out_dir, ts_folder_name)
+        os.makedirs(dest_backup_path)
+        shutil.move(result_file, dest_backup_path)
+        print("existing csv files backed up to {}".format(dest_backup_path))
 
-    for vm in results:
-        with open(os.path.join(out_dir, vm + ".csv"), 'w', newline='') as bench_result_file:
-            fieldnames = ['test_name', 'elapsed_time', 'compile_time', 'exec_time']
-            writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
-            writer.writeheader()
+    # write header
+    with open(result_file, 'w', newline='') as bench_result_file:
+        fieldnames = ['engine', 'test_name', 'elapsed_time', 'compile_time', 'exec_time']
+        writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
+        writer.writeheader()
 
+    # append results for each vm
+    with open(result_file, 'a', newline='') as bench_result_file:
+        fieldnames = ['engine', 'test_name', 'elapsed_time', 'compile_time', 'exec_time']
+        writer = csv.DictWriter(bench_result_file, fieldnames=fieldnames)
+        for vm in results:
             for test_name, result_records in results[vm].items():
                 for record in result_records:
-                    writer.writerow({"test_name" : test_name, "elapsed_time" : record.time, "compile_time" : record.compile_time, "exec_time" : record.exec_time})
+                    writer.writerow({"engine": vm, "test_name" : test_name, "elapsed_time" : record.time, "compile_time" : record.compile_time, "exec_time" : record.exec_time})
 
 
 def main():
@@ -63,12 +76,26 @@ def main():
 
     logger = logging.getLogger("wasm_bench_logger")
 
+    wasm_dir = args['wasmdir']
+    csv_file_path = args['csvfile']
+    engines_to_run = args['engines']
+    # "wagon,wabt,v8-liftoff,v8-turbofan,v8-interpreter,wasmtime,wavm,life-polymerase,life,wasmi,asmble"
+    vms_to_run = {}
+    if engines_to_run is not None:
+        for engine in engines_to_run.split(","):
+            vms_to_run[engine] = vm_descriptors[engine]
+    else:
+        # run all engines
+        vms_to_run = vm_descriptors
+
+    print("vms_to_run:", vms_to_run)
+
     vm_bencher = WasmVMBencher()
-    test_descriptors = getTestDescriptors()
-    test_results = vm_bencher.run_tests(test_descriptors, vm_descriptors)
-    print("ewasm.py test_results:")
+    test_descriptors = getTestDescriptors(wasm_dir)
+    test_results = vm_bencher.run_tests(test_descriptors, vms_to_run)
+    print("test_results:")
     print(test_results)
-    save_test_results(OUT_DIR, test_results)
+    save_test_results(csv_file_path, test_results)
 
 
 if __name__ == '__main__':

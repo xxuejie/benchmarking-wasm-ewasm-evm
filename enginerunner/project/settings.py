@@ -46,7 +46,7 @@ vm_descriptors = {
 
     "wavm"   : VMDescriptor("/engines/wavm-build/bin/wavm-run", "{wasm_file_path} -f {function_name}"),
 
-    "lifePolymerase" : VMDescriptor("/engines/life/life", "-polymerase -entry {function_name} {wasm_file_path}"),
+    "life-polymerase" : VMDescriptor("/engines/life/life", "-polymerase -entry {function_name} {wasm_file_path}"),
 
     "life"   : VMDescriptor("/engines/life/life", "-entry {function_name} {wasm_file_path}"),
 
