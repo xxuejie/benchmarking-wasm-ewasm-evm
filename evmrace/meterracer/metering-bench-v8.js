@@ -45,10 +45,12 @@ function useGas(a) {
 function callDataCopy(resultOffset, dataOffset, length) {
   //console.log('callDataCopy:', resultOffset, dataOffset, length)
 
-  for (var i = 0; i < inputBytes.length; i++) inputBytes[i] = parseInt(inputHex.substr(i * 2, 2), 16);
+  const copyBytes = new Uint8Array(length);
+
+  for (var i = 0; i < length; i++) copyBytes[i] = parseInt(inputHex.substr((dataOffset*2)+(i*2), 2), 16);
 
   const asBytes = new Uint8Array(exported_mem.buffer, resultOffset, length+1);
-  asBytes.set(inputBytes);
+  asBytes.set(copyBytes);
 }
 
 function revert (dataOffset, dataLength) {
