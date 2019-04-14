@@ -18,6 +18,7 @@ parser.add_argument('--testsuffix', help='suffix for benchmark test case name')
 parser.add_argument('--wasmfile', help='full path of wasm file to benchmark')
 parser.add_argument('--testvectors', help='full path of json file with test vectors')
 parser.add_argument('--csvfile', help='full path of csv file to save results')
+parser.add_argument('--v8interp', help='yes to run v8-interpreter')
 args = vars(parser.parse_args())
 
 GO_VM_PATH = "/root/go/src/github.com/ethereum/go-ethereum"
@@ -119,8 +120,12 @@ def parse_node_v8_output(stdoutlines):
 
 
 
-def run_node_v8_cmd(wasmfile, input, expected):
-  node_v8_bench_cmd = "{} --experimental-wasm-bigint --liftoff --no-wasm-tier-up {} {} \"{}\" \"{}\"".format(NODE_BIN_PATH, NODE_BENCHING_SCRIPT, wasmfile, input, expected)
+def run_node_v8_cmd(wasmfile, input, expected, v8interp=False):
+  node_v8_flags = "{} --experimental-wasm-bigint --liftoff --no-wasm-tier-up".format(NODE_BIN_PATH)
+  if v8interp == True:
+    node_v8_flags = "{} --wasm-interpret-all".format(node_v8_flags)
+
+  node_v8_bench_cmd = "{} {} {} \"{}\" \"{}\"".format(node_v8_flags, NODE_BENCHING_SCRIPT, wasmfile, input, expected)
   print("running node v8 benchmark...\n{}".format(node_v8_bench_cmd))
   node_cmd = shlex.split(node_v8_bench_cmd)
   raw_stdoutlines = []
@@ -133,11 +138,11 @@ def run_node_v8_cmd(wasmfile, input, expected):
   return raw_stdoutlines
 
 
-def do_node_v8_bench(wasmfile, input, expected):
+def do_node_v8_bench(wasmfile, input, expected, v8interp=False):
   node_bench_results = []
   # get time to do one run
   start_time = time.time()
-  output = run_node_v8_cmd(wasmfile, input, expected)
+  output = run_node_v8_cmd(wasmfile, input, expected, v8interp=v8interp)
   end_time = time.time()
   result = parse_node_v8_output(output)
   node_bench_results.append(result)
@@ -152,7 +157,7 @@ def do_node_v8_bench(wasmfile, input, expected):
 
   for i in range(repetitions - 1):
     print("run {} of {} for node v8...".format(i + 2, repetitions))
-    run_output = run_node_v8_cmd(wasmfile, input, expected)
+    run_output = run_node_v8_cmd(wasmfile, input, expected, v8interp=v8interp)
     run_result = parse_node_v8_output(run_output)
     node_bench_results.append(run_result)
 
@@ -265,7 +270,7 @@ def run_go_bench_cmd(go_bench_cmd):
   return raw_stdoutlines
 
 
-def doBenchInput(wasmfile, testname, input, expected):
+def doBenchInput(wasmfile, testname, input, expected, v8interp=False):
   input_results = []
   for engine in HERA_ENGINES:
     print("doing engine: {}".format(engine))
@@ -301,7 +306,7 @@ def doBenchInput(wasmfile, testname, input, expected):
   # all hera engines done
   # do node v8
 
-  node_v8_runs = do_node_v8_bench(wasmfile, input, expected)
+  node_v8_runs = do_node_v8_bench(wasmfile, input, expected, v8interp=False)
   node_results = []
   for run in node_v8_runs:
     node_bench_run = {
@@ -314,6 +319,21 @@ def doBenchInput(wasmfile, testname, input, expected):
       'gas_calls': run['gas_calls']
     }
     node_results.append(node_bench_run)
+
+  if v8interp:
+    v8_interp_runs = do_node_v8_bench(wasmfile, input, expected, v8interp=True)
+    for run in v8_interp_runs:
+      v8interp_bench_run = {
+        'engine': 'v8-liftoff',
+        'test_name': testname,
+        'total_time': run['total_time'],
+        'compile_time': run['compile_time'],
+        'exec_time': run['exec_time'],
+        'gas_used': run['gas_used'],
+        'gas_calls': run['gas_calls']
+      }
+      node_results.append(v8interp_bench_run)
+
   # done with node
   print("got node results:", node_results)
   input_results.extend(node_results)
@@ -321,6 +341,11 @@ def doBenchInput(wasmfile, testname, input, expected):
 
 
 def main():
+  v8interp = args['v8interp']
+  if v8interp == "yes":
+    v8interp = True
+  else:
+    v8interp = False
   test_name_suffix = args['testsuffix']
   wasm_file= args['wasmfile']
   csv_file_path = args['csvfile']
@@ -333,9 +358,11 @@ def main():
     print("benchmarking input {} of {}: {}".format(i, len(testvectors), test['name']))
     #test['name'] test['input'] test['expected']
     # test['name'] == "bn128_mul-chfast2"
-    test_name = "{}-{}".format(test['name'], test_name_suffix)
+    test_name = test['name']
+    if len(test_name_suffix) > 0:
+        test_name = "{}-{}".format(test['name'], test_name_suffix)
     # "bn128_mul-chfast2-metered-basic-block"
-    bench_results = doBenchInput(wasm_file, test_name, test['input'], test['expected'])
+    bench_results = doBenchInput(wasm_file, test_name, test['input'], test['expected'], v8interp=v8interp)
     bench_results_all_inputs.extend(bench_results)
 
   # backup of existing csv file is done by the bash script
