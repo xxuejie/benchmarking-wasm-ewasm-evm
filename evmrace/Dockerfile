@@ -80,7 +80,7 @@ RUN git clone --recursive --single-branch --branch bench-evm-codes https://githu
 RUN cd evmone && mkdir build
 RUN cd evmone/build && cmake .. -DEVMONE_TESTING=ON
 RUN cd evmone/build && cmake --build . -- -j
-# /root/evmone/build/test/evmone-bench
+# /root/evmone/build/bin/evmone-bench
 
 
 # install parity-evm
@@ -93,6 +93,11 @@ RUN apt-get update
 RUN apt-get install -y libudev-dev
 # cd /root/parity/ && cargo bench -p ethcore
 
+
+# install cita-vm
+RUN git clone --single-branch --branch evm-bencher https://github.com/cdetrio/cita-vm
+RUN cd cita-vm/evmbin && cargo build --release
+# /root/cita-vm/target/release/cita-evm
 
 
 WORKDIR /

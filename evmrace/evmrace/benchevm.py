@@ -19,6 +19,8 @@ EVMONE_BUILD_DIR = "/root/evmone/build"
 
 PARITY_EVM_DIR = "/root/parity/target/release"
 
+CITA_EVM_DIR = "/root/cita-vm/target/release"
+
 GETH_EVM_DIR = "/root/go/src/github.com/ethereum/go-ethereum/core/vm/runtime"
 
 
@@ -147,9 +149,43 @@ def do_parity_bench(parity_cmd):
     return {'gas_used': gasused, 'time': time.total_seconds()}
 
 
+def get_cita_cmd(codefile, calldata, expected):
+    cmd_str = "./cita-evm --code-file {} --input {} --expected {} ".format(codefile, calldata, expected)
+    return cmd_str
+
+"""
+~/cita-vm# ./target/release/cita-evm --code-file /evmrace/evmcode/bn128_mul_weierstrudel.hex --input 039730ea8dff1254c0fee9c0ea777d29a9c710b7e616683f194f18c43b43b869073a5ffcc6fc7a28c30723d6e58ce577356982d65b833a5a5c15bf9024b43d98ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff --expected "0e9c28772a2a79561257f998c9c31e9b47bb592d54b6936bc00066453f50b27816c1cda062bd6cc07463ba71ff1d299223dd1bb9a6ac5cfe1d57a19c87a229e029a4b5947ed4dca6df8349674078a9b3ea3d06b4373d9d7a50866f3de054285d"
+code_hex length: 29316
+gas_used: 75089
+code avg run time: 16.695968ms
+"""
+
+def do_cita_bench(cita_cmd):
+    print("running cita-evm benchmark...\n{}\n".format(cita_cmd))
+    cita_cmd = shlex.split(cita_cmd)
+    stdoutlines = []
+    with subprocess.Popen(cita_cmd, cwd=CITA_EVM_DIR, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True) as p:
+        for line in p.stdout: # b'\n'-separated lines
+            print(line, end='')
+            stdoutlines.append(line)  # pass bytes as is
+        p.wait()
+
+    timeregex = "code avg run time: ([\d\w\.]+)"
+    gasregex = "gas_used: (\d+)"
+    time_line = stdoutlines[-1]
+    gas_line = stdoutlines[-2]
+    time_match = re.search(timeregex, time_line)
+    time = durationpy.from_str(time_match.group(1))
+    gas_match = re.search(gasregex, gas_line)
+    gasused = gas_match.group(1)
+    return {'gas_used': gasused, 'time': time.total_seconds()}
+
+
+
+
 
 def get_evmone_cmd(codefile, calldata, expected):
-    cmd_str = "test/evmone-bench {} {} {} --benchmark_color=false --benchmark_filter=bench_evm_code --benchmark_min_time=7".format(codefile, calldata, expected)
+    cmd_str = "bin/evmone-bench {} {} {} --benchmark_color=false --benchmark_filter=external_evm_code --benchmark_min_time=7".format(codefile, calldata, expected)
     return cmd_str
 
 
@@ -187,7 +223,7 @@ def do_evmone_bench(evmone_cmd):
             stdoutlines.append(line)  # pass bytes as is
         p.wait()
 
-    timeregex = "bench_evm_code\s+(\d+) us"
+    timeregex = "external_evm_code\s+(\d+) us"
     gasregex = "gas_used=([\d\.\w]+)"
     # maybe --benchmark_format=json is better so dont have to parse "36.775k"
     benchline = stdoutlines[-1]
@@ -250,6 +286,15 @@ def main():
                 geth_result['total_time'] = geth_bench_result['time']
                 geth_result['gas_used'] = geth_bench_result['gas_used']
                 evm_benchmarks.append(geth_result)
+
+                cita_bench_cmd = get_cita_cmd(codefilepath, calldata, expected)
+                cita_bench_result = do_cita_bench(cita_bench_cmd)
+                cita_result = {}
+                cita_result['engine'] = "cita-evm"
+                cita_result['test_name'] = test_name
+                cita_result['total_time'] = cita_bench_result['time']
+                cita_result['gas_used'] = cita_bench_result['gas_used']
+                evm_benchmarks.append(cita_result)
 
                 print("done with input:", test_name)
 
