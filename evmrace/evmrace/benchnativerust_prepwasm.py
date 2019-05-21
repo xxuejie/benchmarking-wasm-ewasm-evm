@@ -163,6 +163,9 @@ def main():
 
         #rust_code_path = os.path.join(RUST_CODES_DIR, benchname)
 
+        ## TODO: move input vectors to their own "standalone" folder
+        # use "ewasm" folder
+
         with open("inputvectors/{}-inputs.json".format(benchname)) as f:
             bench_inputs = json.load(f)
 

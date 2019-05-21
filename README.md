@@ -20,7 +20,7 @@ $ docker build . -t wasm-engines
 ## docker needs --security-opt because one of the engines (life or wasmer?) uses an uncommon syscall (userfaultfd??)
 
 $ cd ..
-$ docker run -it -v $(pwd)/wasmfiles:/wasmfiles -v $(pwd)/testresults:/testresults --security-opt seccomp=./enginerunner/dockerseccompprofile.json wasm-engines
+$ docker run -it -v $(pwd)/../wasmfiles:/wasmfiles -v $(pwd)/../testresults:/testresults --security-opt seccomp=../enginerunner/dockerseccompprofile.json wasm-engines
 ```
 
 5. inside the docker container, run the benchmark script

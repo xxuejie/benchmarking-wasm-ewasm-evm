@@ -18,6 +18,16 @@ function decodeJacobianResult(output) {
     return hex
 }
 
+
+function decodeJacobianResult(output) {
+    const x = new BN(output.slice(0, 64), 16);
+    const y = new BN(output.slice(64, 128), 16);
+    const z = new BN(output.slice(128, 192), 16);
+    const affine = bn128.toAffine({ x, y, z })
+    const hex = affine.x.toString('hex') + affine.y.toString('hex')
+    return hex
+}
+
 */
 
 // ho ho ho branch
