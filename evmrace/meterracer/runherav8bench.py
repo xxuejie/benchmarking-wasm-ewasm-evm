@@ -324,7 +324,7 @@ def doBenchInput(wasmfile, testname, input, expected, v8interp=False):
     v8_interp_runs = do_node_v8_bench(wasmfile, input, expected, v8interp=True)
     for run in v8_interp_runs:
       v8interp_bench_run = {
-        'engine': 'v8-liftoff',
+        'engine': 'v8-interpreter',
         'test_name': testname,
         'total_time': run['total_time'],
         'compile_time': run['compile_time'],
