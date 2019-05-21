@@ -35,20 +35,18 @@ RUN add-apt-repository ppa:longsleep/golang-backports && apt-get update && apt-g
 
 
 # install geth
-RUN rm -rf /root/go/src/github.com/ethereum/go-ethereum
 RUN go get -u -v github.com/ethereum/go-ethereum
 # RUN cd /root/go/src/github.com/ethereum/go-ethereum && git checkout v1.8.23
 RUN cd /root/go/src/github.com/ethereum/go-ethereum && git remote add cdetrio https://github.com/cdetrio/go-ethereum.git
 RUN cd /root/go/src/github.com/ethereum/go-ethereum && git fetch cdetrio
 RUN cd /root/go/src/github.com/ethereum/go-ethereum && git checkout evm-code-bencher
-RUN rm /go-ethereum
 RUN ln -s /root/go/src/github.com/ethereum/go-ethereum /go-ethereum
 # cd /go-ethereum/core/vm/runtime && go test -bench BenchmarkEvmCode -benchtime 5s
 
 
 # install python modules needed for benchmarking script
 RUN pip3 install durationpy jinja2 pandas
-# didnt alias python to python3 because it will break apt (assumes python is python2)
+# dont alias python to python3 because it will break apt (assumes python is python2)
 
 
 ## build hera static libs
