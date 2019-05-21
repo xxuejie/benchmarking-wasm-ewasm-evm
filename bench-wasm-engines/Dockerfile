@@ -143,6 +143,7 @@ RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
 
 # copy rust code
 COPY ../rust-code  /rust-code
+COPY ../inputvectors /inputvectors
 
 # copy benchmarking scripts
 RUN mkdir /bencher
