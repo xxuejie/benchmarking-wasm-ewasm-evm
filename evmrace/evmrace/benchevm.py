@@ -15,6 +15,8 @@ RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
 EVM_CODE_DIR = "/evmrace/evmcode"
 
+INPUT_VECTORS_DIR = "./inputvectors/evm"
+
 EVMONE_BUILD_DIR = "/root/evmone/build"
 
 PARITY_EVM_DIR = "/root/parity/target/release"
@@ -246,11 +248,9 @@ def main():
         if benchname.endswith("_shift"):
             inputsfilename = benchname.replace("_shift", "")
             shift_suffix = "-shiftopt"
-        if benchname.endswith("_weierstrudel"):
-            inputsfilename = inputsfilename
-        else:
-            inputsfilename = inputsfilename + "_evmone"
-        with open("inputvectors/{}-inputs.json".format(inputsfilename)) as f:
+        file_name = "{}-inputs.json".format(inputsfilename)
+        inputs_file_path = os.path.join(INPUT_VECTORS_DIR, file_name)
+        with open(inputs_file_path) as f:
             bench_inputs = json.load(f)
             for input in bench_inputs:
                 print("bench input:", input['name'])
