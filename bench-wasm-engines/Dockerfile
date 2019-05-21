@@ -141,6 +141,9 @@ RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
 #RUN cd wag && go build ./cmd/ethereum/...
 
 
+# copy rust code
+COPY ../rust-code  /rust-code
+
 # copy benchmarking scripts
 RUN mkdir /bencher
 COPY project /bencher/project
