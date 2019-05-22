@@ -15,7 +15,8 @@ import glob
 WASM_FILE_OUTPUT_PATH = "/evmwasmfiles"
 RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
-RUST_CODES_DIR = "./rust-code"
+RUST_CODES_DIR = "/rust-code"
+INPUT_VECTORS_DIR = "/inputvectors"
 
 RESULT_CSV_FILENAME = "native_benchmarks.csv"
 
@@ -157,7 +158,7 @@ def main():
     #benchdirs = [dI for dI in os.listdir('./') if os.path.isdir(os.path.join('./',dI))]
     native_benchmarks = {}
     for benchname in rustcodes:
-        if benchname in ["__pycache__", "inputvectors", "evmcode"]:
+        if benchname in ["__pycache__"]:
             continue
         print("start benching: ", benchname)
 
@@ -165,8 +166,8 @@ def main():
 
         ## TODO: move input vectors to their own "standalone" folder
         # use "ewasm" folder
-
-        with open("inputvectors/{}-inputs.json".format(benchname)) as f:
+        inputvecs_path = os.path.join(INPUT_VECTORS_DIR, "{}-inputs.json".format(benchname))
+        with open(inputvecs_path) as f:
             bench_inputs = json.load(f)
 
             for input in bench_inputs:

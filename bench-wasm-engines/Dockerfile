@@ -141,9 +141,18 @@ RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
 #RUN cd wag && go build ./cmd/ethereum/...
 
 
+## install dependencies for standalone wasm prep
+pip3 install jinja2 pandas
+
+#TODO: copy nanodurationpy
+
+
+# rust wasm32 target for compiling wasm
+RUN rustup target add wasm32-unknown-unknown
+
 # copy rust code
-COPY ../rust-code  /rust-code
-COPY ../inputvectors /inputvectors
+COPY rust-code  /rust-code
+COPY inputvectors /inputvectors
 
 # copy benchmarking scripts
 RUN mkdir /bencher
