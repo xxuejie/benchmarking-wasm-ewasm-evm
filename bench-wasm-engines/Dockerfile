@@ -142,26 +142,29 @@ RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
 
 
 ## install dependencies for standalone wasm prep
-pip3 install jinja2 pandas
-
-#TODO: copy nanodurationpy
-
+RUN pip3 install jinja2 pandas
 
 # rust wasm32 target for compiling wasm
 RUN rustup target add wasm32-unknown-unknown
 
-# copy rust code
-COPY rust-code  /rust-code
-COPY inputvectors /inputvectors
 
 # copy benchmarking scripts
-RUN mkdir /bencher
-COPY project /bencher/project
-COPY main.py /bencher
+RUN mkdir /benchrunner
+COPY project /benchrunner/project
+COPY main.py /benchrunner
+
+
+# copy scripts to generate standalone wasm modules
+RUN mkdir /benchprep
+COPY benchnativerust_prepwasm.py /benchprep
+COPY nanodurationpy.py /benchprep
+COPY rust-code  /benchprep/rust-code
+COPY inputvectors /benchprep/inputvectors
+
 
 RUN mkdir -p /testresults
 
-WORKDIR /bencher
+WORKDIR /benchprep
 
 CMD /bin/bash
 

@@ -4,6 +4,7 @@
 Engines benchmarked: asmble (compiler), life (interpreter), life-polymerase (compiler), v8-interpreter, v8-liftoff, v8-turbofan, wabt (interp), wagon (interp), wasmi (interp), wasmtime (compiler), wavm (compiler). Measures instantiation time (decode/instantiate for interpreters, decode/instantiate/compile for compilers) and execution time.
 
 1. Prepare "standalone" wasm files. Wasm modules should export one function, `main`, which takes no input arguments and returns no result (this is for maximum compatibility, as engines often don't support passing arguments to invoked functions without extra support from an embedder).
+  * If you want run the same benchmarks as in the Ewasm benchmark report, see the section below (prepare wasm benchmark files).
 
 2. build the `wasm-engines` docker container
 
@@ -26,11 +27,19 @@ $ docker run -it -v $(pwd)/../wasmfiles:/wasmfiles -v $(pwd)/../testresults:/tes
 5. inside the docker container, run the benchmark script
 
 ```
+## move to directory with the engine runner script
+$ cd /benchrunner
+
 ## need to use `python3.7`
 $ python3.7 main.py |& tee wasm-run1.log
 ```
 
 6. exit the docker container. benchmark results are in `./testresults`, one csv file per engine
+
+
+
+# prepare wasm benchmark files
+
 
 
 
