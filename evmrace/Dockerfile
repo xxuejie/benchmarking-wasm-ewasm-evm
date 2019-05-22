@@ -49,31 +49,6 @@ RUN pip3 install durationpy jinja2 pandas
 # dont alias python to python3 because it will break apt (assumes python is python2)
 
 
-## build hera static libs
-RUN apt-get install -y llvm-6.0-dev
-RUN git clone --single-branch --branch benchmarking-static-lib https://github.com/cdetrio/hera
-RUN cd hera && git submodule update --init
-RUN cd hera && mkdir -p build
-RUN cd hera/build && cmake -DBUILD_SHARED_LIBS=OFF -DHERA_BINARYEN=ON -DHERA_WABT=ON -DHERA_WAVM=ON -DHERA_DEBUGGING=OFF ..
-RUN cd hera/build && cmake --build .
-RUN cd hera/build/deps/src/binaryen-build/lib && for f in *.a; do ar x $f; done
-RUN cd hera/build/deps/src/binaryen-build/lib && ar r -s -c libbinaryenfull.a *.o; rm *.o
-RUN cd hera/build/deps/src/wavm-build/lib && for f in *.a; do ar x $f; done
-RUN cd hera/build/deps/src/wavm-build/lib && ar r -s -c libwavm.a *.o; rm *.o
-# /root/hera path is assumed by geth evmc6-static-lib branch
-RUN ln -s /hera /root/hera
-
-# install nodejs
-RUN mkdir -p node
-# RUN cd node && curl -fsSLO --compressed https://nodejs.org/dist/v11.10.0/node-v11.10.0-linux-x64.tar.gz
-# need node 11.13.0 or 12 nightly for --experimental-wasm-bigint
-RUN cd node && curl -fsSLO --compressed https://nodejs.org/download/nightly/v12.0.0-nightly20190325cdb87d9548/node-v12.0.0-nightly20190325cdb87d9548-linux-x64.tar.gz
-RUN cd node && tar -xvf node-v12.0.0-nightly20190325cdb87d9548-linux-x64.tar.gz -C /usr/local/ --strip-components=1 --no-same-owner
-RUN cd node && ln -s /usr/local/bin/node ./node
-# /root/node is assumed by runherav8bench.py
-RUN ln -s /node/node /root/node
-
-
 # install evmone
 WORKDIR /root
 RUN git clone --recursive --single-branch --branch bench-evm-codes https://github.com/cdetrio/evmone
@@ -104,11 +79,7 @@ WORKDIR /
 RUN mkdir -p /evmraceresults
 COPY ./evmrace /evmrace
 COPY ./inputvectors /evmrace/inputvectors
-COPY ./rust-code /evmrace/rust-code
 COPY ./evmcode /evmrace/evmcode
-COPY ./ewasm-code /evmrace/ewasm-code
-COPY ./meterracer /meterracer
-RUN chmod +x /meterracer/*.sh
 
 WORKDIR /evmrace
 
