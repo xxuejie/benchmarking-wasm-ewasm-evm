@@ -13,7 +13,8 @@ import shlex
 
 RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
-EVM_CODE_DIR = "./evmcode"
+# must be an absolute path to evm code dir
+EVM_CODE_DIR = "/evmrace/evmcode"
 
 INPUT_VECTORS_DIR = "./inputvectors"
 
