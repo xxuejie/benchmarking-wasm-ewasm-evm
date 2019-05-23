@@ -39,12 +39,14 @@ $ python3.7 main.py |& tee wasm-run1.log
 
 
 # prepare wasm benchmark files
+```
+### use rust-code templates and inputvectors to compile standalone wasm files
 
+## also compile and benchmark native rust exe's
 
+```
 
-
-# benchmark EVM, native, and prepare standalone wasm files
-
+# benchmark EVM engines and geth/parity precompiles
 ```
 $ cd evmrace
 $ docker build . -t evmrace
@@ -54,23 +56,17 @@ $ docker run -it --entrypoint=/bin/bash -v $(pwd)/evmwasmfiles:/evmwasmfiles -v 
 ## parse results and save to /evmraceresults/geth_precompile_benchmarks.csv
 $ PYTHONIOENCODING=UTF-8 python3 precompileracer.py
 
-### use rust-code templates to compile standalone wasm files with input vectors from /evmrace/inputvectors
-## also compile and benchmark native rust exe's
-## if a ./evmrace/evmrace/$benchmark folder has a *_test.go file, we have EVM bytecode.
-## for those, benchmark using the geth EVM. TODO: also benchmark using evmone
-
 
 $ PYTHONIOENCODING=UTF-8 python3 evmracer.py
 
 # after running evmracer.py, standalone wasm files will be saved to /evmwasmfiles
-# exit the docker container, copy wasm files to /wasmfiles, for benchmarking with `wasm-engines`
 
 ## copy the test result csv files into a folder for analysis with the python notebook
-# /evmraceresults/native_benchmarks.csv
 # /evmraceresults/evm_benchmarks.csv
 # /evmraceresults/geth_precompile_benchmarks.csv
 ```
 
+# benchmark ewasm metering
 ```
 ### ewasm metering benchmarks
 $ cd meterracer

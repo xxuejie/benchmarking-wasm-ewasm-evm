@@ -15,7 +15,7 @@ RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
 
 EVM_CODE_DIR = "/evmrace/evmcode"
 
-INPUT_VECTORS_DIR = "./inputvectors/evm"
+INPUT_VECTORS_DIR = "./inputvectors"
 
 EVMONE_BUILD_DIR = "/root/evmone/build"
 

@@ -77,7 +77,11 @@ RUN cd cita-vm/evmbin && cargo build --release
 
 WORKDIR /
 RUN mkdir -p /evmraceresults
-COPY ./evmrace /evmrace
+RUN mkdir /evmrace
+COPY ./benchevm.py /evmrace
+COPY ./nanodurationpy.py /evmrace
+COPY ./benchparityprecompiles.py /evmrace
+COPY ./benchgethprecompiles.py /evmrace
 COPY ./inputvectors /evmrace/inputvectors
 COPY ./evmcode /evmrace/evmcode
 
