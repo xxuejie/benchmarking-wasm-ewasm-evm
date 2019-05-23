@@ -129,7 +129,7 @@ def saveResults(precompile_benchmarks):
 def main():
     bench_output = do_parity_precompile_bench()
     bench_results = parse_parity_bench_output(bench_output)
-    print("got pairty precompile benchmarks:", bench_results)
+    print("got parity precompile benchmarks:", bench_results)
 
     ## TODO: bench parity precompiles
 

@@ -1,3 +1,6 @@
+# WARNING: WORK-IN-PROGRESS
+
+## Attempt to run at your own risk. These scripts are probably broken and won't work for you. The documentation below is out of date or incomplete. This warning will be removed once stable.
 
 # benchmark wasm engines
 
