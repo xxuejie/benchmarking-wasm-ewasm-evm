@@ -85,6 +85,7 @@ def main():
         vms_to_run = vm_descriptors
 
     print("vms_to_run:", vms_to_run)
+    ## TODO: print version of each engine
 
     vm_bencher = WasmVMBencher()
     test_descriptors = getTestDescriptors(wasm_dir)

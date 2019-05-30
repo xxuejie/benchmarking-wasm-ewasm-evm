@@ -12,6 +12,7 @@ CSV_RESULTS=/testresults/native_benchmarks.csv
 RUST_CODE_DIR=./rust-code
 INPUT_VECTORS_DIR=./inputvectors
 
+cd /benchprep
 python3.7 benchnativerust_prepwasm.py --wasmoutdir="${WASM_FILE_DIR}" --csvresults="${CSV_RESULTS}" --rustcodedir="${RUST_CODE_DIR}" --inputvectorsdir="${INPUT_VECTORS_DIR}" |& tee prep-wasm-bench-native-run1.log
 
 
@@ -22,6 +23,7 @@ WASM_MINIFIED_DIR=/wasmfilesminified
 
 echo "building sentinel-rs branch minify-tool..."
 cd /root
+rm -rf sentinel-minify-tool # if rerunning the script
 git clone --single-branch --branch minify-tool https://github.com/ewasm/sentinel-rs.git sentinel-minify-tool
 # .cargo/config sets default build target to wasm
 rm sentinel-minify-tool/.cargo/config
@@ -40,5 +42,5 @@ done
 
 
 
-
+cd /benchrunner
 python3.7 main.py --wasmdir="/wasmfilesminified" --csvfile="/testresults/standalone_wasm_results.csv" |& tee wasm-engines-run1.log
