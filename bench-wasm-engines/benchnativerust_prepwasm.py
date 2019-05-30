@@ -133,7 +133,7 @@ def saveResults(native_benchmarks, result_file):
     ts = time.time()
     date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
     ts_folder_name = "{}-{}".format(date_str, round(ts))
-    result_path = sos.path.dirname(result_file)
+    result_path = os.path.dirname(result_file)
     dest_backup_path = os.path.join(result_path, ts_folder_name)
     os.makedirs(dest_backup_path)
 
