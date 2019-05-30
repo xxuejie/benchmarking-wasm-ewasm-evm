@@ -12,7 +12,7 @@ CSV_RESULTS=/testresults/native_benchmarks.csv
 RUST_CODE_DIR=./rust-code
 INPUT_VECTORS_DIR=./inputvectors
 
-python3.7 benchnativerust_prepwasm.py --wasmoutdir="${WASM_FILE_DIR}" --csvresults="${CSV_RESULTS}" --rustcodedir="${RUST_CODE_DIR}" --inputvectorsdir="${INPUT_VECTORS_DIR}"
+python3.7 benchnativerust_prepwasm.py --wasmoutdir="${WASM_FILE_DIR}" --csvresults="${CSV_RESULTS}" --rustcodedir="${RUST_CODE_DIR}" --inputvectorsdir="${INPUT_VECTORS_DIR}" |& tee prep-wasm-bench-native-run1.log
 
 
 
