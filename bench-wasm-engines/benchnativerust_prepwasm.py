@@ -10,15 +10,16 @@ import datetime
 import os
 import shutil
 import glob
+import argparse
 
-# output paths should be mounted docker volumes
-WASM_FILE_OUTPUT_PATH = "/evmwasmfiles"
-RESULT_CSV_OUTPUT_PATH = "/evmraceresults"
+parser = argparse.ArgumentParser()
+parser.add_argument('--wasmoutdir', help='full path of dir containing wasm files')
+parser.add_argument('--csvresults', help='full path of csv result file')
+parser.add_argument('--rustcodedir', help='comma-separated list of engines to benchmark')
+parser.add_argument('--inputvectorsdir', help='comma-separated list of engines to benchmark')
 
-RUST_CODES_DIR = "./rust-code"
-INPUT_VECTORS_DIR = "./inputvectors"
+args = vars(parser.parse_args())
 
-RESULT_CSV_FILENAME = "native_benchmarks.csv"
 
 # how many times to run native exec
 RUST_BENCH_REPEATS = 50
@@ -44,10 +45,10 @@ def bench_rust_binary(rustdir, input_name, native_exec):
         bench_times.append(elapsed_time.total_seconds())
     return bench_times
 
-def do_rust_bench(benchname, input):
+def do_rust_bench(benchname, input, rust_code_dir, wasm_out_dir):
     #rustsrc = "{}/rust-code/src/bench.rs".format(os.path.abspath(benchname))
     #rustsrc = "{}/rust-code".format(os.path.abspath(benchname))
-    rust_code_path = os.path.abspath(os.path.join(RUST_CODES_DIR, benchname))
+    rust_code_path = os.path.abspath(os.path.join(rust_code_dir, benchname))
     #rustsrc = "{}/rust-code".format(os.path.abspath(benchname))
     rustsrc = rust_code_path
     #rusttemplate = "{}/src/bench.rs".format(rustsrc)
@@ -113,8 +114,8 @@ def do_rust_bench(benchname, input):
     print(("").join(stdoutlines), end="")
     # wasm is at ./target/wasm32-unknown-unkown/release/sha1_wasm.wasm
     wasmbin = "{}/target/wasm32-unknown-unknown/release/{}_wasm.wasm".format(filldir, benchname_rust)
-    wasmdir = os.path.abspath(WASM_FILE_OUTPUT_PATH)
-    wasmoutfile = "{}/{}.wasm".format(wasmdir, input['name'])
+    wasmdir = os.path.abspath(wasm_out_dir)
+    wasmoutfile = os.path.join(wasmdir, "{}.wasm".format(input['name']))
     if not os.path.exists(wasmdir):
         os.mkdir(wasmdir)
     shutil.copy(wasmbin, wasmoutfile)
@@ -126,13 +127,14 @@ def do_rust_bench(benchname, input):
     return { 'bench_times': native_times, 'exec_size': exec_size }
 
 
-def saveResults(native_benchmarks):
-    result_file = os.path.join(RESULT_CSV_OUTPUT_PATH, RESULT_CSV_FILENAME)
+def saveResults(native_benchmarks, result_file):
+    #result_file = os.path.join(RESULT_CSV_OUTPUT_PATH, RESULT_CSV_FILENAME)
     # move existing files to old-datetime-folder
     ts = time.time()
     date_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
     ts_folder_name = "{}-{}".format(date_str, round(ts))
-    dest_backup_path = os.path.join(RESULT_CSV_OUTPUT_PATH, ts_folder_name)
+    result_path = sos.path.dirname(result_file)
+    dest_backup_path = os.path.join(result_path, ts_folder_name)
     os.makedirs(dest_backup_path)
 
     #for file in glob.glob(r"{}/*.csv".format(RESULT_CSV_OUTPUT_PATH)):
@@ -154,7 +156,11 @@ def saveResults(native_benchmarks):
 
 
 def main():
-    rustcodes = [dI for dI in os.listdir(RUST_CODES_DIR) if os.path.isdir(os.path.join(RUST_CODES_DIR,dI))]
+    wasm_out_dir = args['wasmoutdir']
+    csv_file_path = args['csvresults']
+    rust_code_dir = args['rustcodedir']
+    input_vectors_dir = args['inputvectorsdir']
+    rustcodes = [dI for dI in os.listdir(rust_code_dir) if os.path.isdir(os.path.join(rust_code_dir,dI))]
     #benchdirs = [dI for dI in os.listdir('./') if os.path.isdir(os.path.join('./',dI))]
     native_benchmarks = {}
     for benchname in rustcodes:
@@ -166,13 +172,13 @@ def main():
 
         ## TODO: move input vectors to their own "standalone" folder
         # use "ewasm" folder
-        inputvecs_path = os.path.join(INPUT_VECTORS_DIR, "{}-inputs.json".format(benchname))
+        inputvecs_path = os.path.join(input_vectors_dir, "{}-inputs.json".format(benchname))
         with open(inputvecs_path) as f:
             bench_inputs = json.load(f)
 
             for input in bench_inputs:
                 print("bench input:", input['name'])
-                native_input_times = do_rust_bench(benchname, input)
+                native_input_times = do_rust_bench(benchname, input, rust_code_dir, wasm_out_dir)
                 if native_input_times:
                     native_benchmarks[input['name']] = native_input_times
 
@@ -181,7 +187,7 @@ def main():
         print("done benching: ", benchname)
 
     print("got native_benchmarks:", native_benchmarks)
-    saveResults(native_benchmarks)
+    saveResults(native_benchmarks, csv_file_path)
 
 if __name__ == "__main__":
     main()
