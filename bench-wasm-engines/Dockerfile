@@ -161,9 +161,9 @@ COPY nanodurationpy.py /benchprep
 COPY rust-code  /benchprep/rust-code
 COPY inputvectors /benchprep/inputvectors
 COPY benchmeteredstandalone.sh /benchprep
-RUN chmod +x benchmeteredstandalone.sh
+RUN chmod +x /benchprep/benchmeteredstandalone.sh
 COPY bench_wasm_and_native.sh /benchprep
-RUN chmod +x bench_wasm_and_native.sh
+RUN chmod +x /benchprep/bench_wasm_and_native.sh
 
 
 RUN mkdir -p /testresults
