@@ -1,11 +1,8 @@
 #!/usr/bin/python3.7
 
-from project.BenchTestGenerator import BenchTestGenerator
 from project.WasmVMBencher import WasmVMBencher
 from project.settings import vm_descriptors
-from project.TestDescriptor import TestDescriptor
 
-import click
 import csv
 import logging
 import sys
@@ -13,8 +10,7 @@ import os
 import time
 import datetime
 import shutil
-import glob
-import argparse, sys
+import argparse
 
 sys.stdout.reconfigure(encoding='utf-8')
 # sys.stdout.reconfigure requires python 3.7
