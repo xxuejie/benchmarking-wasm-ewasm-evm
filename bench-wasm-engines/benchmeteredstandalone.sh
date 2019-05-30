@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 
-# first take dir of wasm files, and inject standalone metering on them
+## This is intended to benchmark standalone wasm files with injected metering
+# to measure the metering slowdown on wasm engines that aren't integrated into
+# ethereum clients.
+# Contrast with the `bench-ewasm` folder, which benches wasm files with injected
+# metering in wasm engines that are integrated into ethereum clients.
+
+# Standalone metering is always inline metering (obviously, because standalone
+# wasm files don't call any host functions, so they can't call a `useGas` host function).
+
+# first take dir of standalone wasm files, and inject standalone/inline metering on them
 
 #WASM_FILE_DIR=/wasmfiles
 
