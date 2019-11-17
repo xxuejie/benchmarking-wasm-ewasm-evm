@@ -238,7 +238,8 @@ def do_evmone_bench(evmone_cmd):
 
 
 def main():
-    evmcodefiles = [fname for fname in os.listdir(EVM_CODE_DIR) if fname.endswith(".hex")]
+    # evmcodefiles = [fname for fname in os.listdir(EVM_CODE_DIR) if fname.endswith(".hex")]
+    evmcodefiles = ["blake2b.hex", "bn256g2mul.hex"]
     evm_benchmarks = []
     for codefile in evmcodefiles:
         print("start benching: ", codefile)
@@ -279,14 +280,14 @@ def main():
                 parity_result['gas_used'] = parity_bench_result['gas_used']
                 evm_benchmarks.append(parity_result)
 
-                geth_bench_cmd = get_geth_cmd(codefilepath, calldata, expected)
-                geth_bench_result = do_geth_bench(geth_bench_cmd)
-                geth_result = {}
-                geth_result['engine'] = "geth-evm"
-                geth_result['test_name'] = test_name
-                geth_result['total_time'] = geth_bench_result['time']
-                geth_result['gas_used'] = geth_bench_result['gas_used']
-                evm_benchmarks.append(geth_result)
+                # geth_bench_cmd = get_geth_cmd(codefilepath, calldata, expected)
+                # geth_bench_result = do_geth_bench(geth_bench_cmd)
+                # geth_result = {}
+                # geth_result['engine'] = "geth-evm"
+                # geth_result['test_name'] = test_name
+                # geth_result['total_time'] = geth_bench_result['time']
+                # geth_result['gas_used'] = geth_bench_result['gas_used']
+                # evm_benchmarks.append(geth_result)
 
                 cita_bench_cmd = get_cita_cmd(codefilepath, calldata, expected)
                 cita_bench_result = do_cita_bench(cita_bench_cmd)

@@ -70,7 +70,7 @@ RUN apt-get install -y libudev-dev
 
 
 # install cita-vm
-RUN git clone --single-branch --branch evm-bencher https://github.com/cdetrio/cita-vm
+RUN git clone --single-branch --branch evm-bencher https://github.com/xxuejie/cita-vm
 RUN cd cita-vm/evmbin && cargo build --release
 # /root/cita-vm/target/release/cita-evm
 
